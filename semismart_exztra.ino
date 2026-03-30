@@ -127,19 +127,15 @@ void setup() {
 	extern bool sht4Available;
 	if (!sht4Available) {
 		pinMode(LED_BUILTIN, OUTPUT);
-#if ARDUINO_NANO_R4
 		pinMode(LEDR, OUTPUT);
 		pinMode(LEDB, OUTPUT);
-#endif
 		static bool LEDFLASH = false;
 		while (1) {
 			viewManager.setView(ViewID::SENSOR_ERROR);
 			viewManager.draw();
 			digitalWrite(LED_BUILTIN, LEDFLASH ? HIGH : LOW);
-#if ARDUINO_NANO_R4
 			analogWrite(LEDR, LEDFLASH ? 0 : 255);
 			analogWrite(LEDB, LEDFLASH ? 255 : 0);
-#endif
 			LEDFLASH = !LEDFLASH;
 			delay(500);
 		}
