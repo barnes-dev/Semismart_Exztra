@@ -404,7 +404,33 @@ Power Consumption
 **Peak consumption**: Up to 300W during initial heating phase
 **Typical maintenance**: 100-150W for temperature control
 
+Addition from NiccZee:
+v 1.0.0:
 
+Added functionality: It is now selectable to run the heater (CYCLING) and get it controlled either by Temperature or by Humidity.
+When temperature has reached the target setting it turns off the heater, but keeps the fans on until the temperature starts to descend and then turns off the fans. This way, the residual heat is taken care of. When the temperature decreseas to 3 degrees under the set target temp, the heater and fans turns on again, and cycles like this indefinitely until you turn off the heater (SYS OFF). The humidity option works the same way.
+This is selectable with the MODE setting. (USER TEMP, USER HUM, AUTO TEMP, AUTO HUM). The AUTO options are only there for when you have the GPIO option on, to steer the Semismart when you print.
+
+The Timer option has an option to set the time for how long it will stay on and heat to the set target temp, and then it will turn off.
+There is also a setting to set for how long it will stay off until it starts to heat again. (Set to 0 minutes to turn off repetitions).
+
+Added some animation on some icons for fun!
+Added the Voxel logo at the startup screen as well.
+
+The UI is based on the original UI from the Semismart, which means that the MODE is selected when "CYCLING" is on, and the 4 different modes (2 if you don't have th GPIO setting on) are selected with the upper button.
+
+The lower button in the same "CYCLING" mode changes the LED-strip if the feature is turned on. I can see that the LED-strip used the D12 pin on the NANO. It is normally used with for receiving data with SPI communication, but it is not used with screens, as we only send to screens and never receive.
+
+To turn on the modes "DRYING" or "PRINTING" manually, you have to have set the Mode at "CYCLING" to "USER TEMP" or "USER HUM". Then press the middle button for more than 2 seconds.
+
+Once in "DRYING" or "PRINTING" mode, you can select these 2 options with the lower button, getting into "Operation Mode". To select mode, press the middle button to open selection, then press either upper button for "By Humid" = "Drying", or lower button for "Dry Timer" = "Printing". Press the middle button again to save your selection. And press the lower button to get to the selected operational mode.
+
+In "Drying" mode the target temperature, a run-timer and a standby-timer is set. The target temperature sets when the heater should turn off. Fans will still be running. The Run-timer sets (in minutes) for how long you want the Heater and fans to be on, and the Standby-timer sets for how long the Heater and fans are off, until they turn on again. The timers repeat untill the Semismart is turned to a different mode or OFF. If the Standby timer is set to 0, there is no repetition. The the Run-timer has reached "ETA 0:00", it turns off the Heater and fans permanently "SYS OFF".
+Temperature and timers are set by pressing the upper button, rolling through Temperature, Run-Time, and Standby-timer. Press the middle button to open the settting-mode and select up/down with the upper and lower buttons. Press middle button again to save your setting.
+
+In "Printing" mode the setting are Temperature and Humidity, again rolling through with the upper button. This mode will run for as long you have it in this mode. This is also the mode that is turned on automatically (at "AUTO TEMP" and "AUTO HUM") when the GPIO feature is on. The fans and heater is controlled by the set Temp and Humidity.
+
+To turn these modes off, you need to long press (2 seconds) the middle button to turn off the Semismart. "SYS OFF". The fans will stay on for 45 seconds, in COOLING mode, and then turn off.
 
 🤝 Contributing
 
