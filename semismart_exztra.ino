@@ -5,7 +5,7 @@
 // Core Arduino libraries
 #include <Arduino.h>
 #include <Wire.h>
-#include <EEPROM.h>
+//#include <EEPROM.h>
 
 /* =======================================================================================================================================
 Note on display libraries:
@@ -42,6 +42,13 @@ and update the display initialization accordingly. Just remember to comment out 
 #include "include/utils/strings.h"
 #include "include/utils/tasks.h"
 
+// Connectivity modules
+#if BLUETOOTH_WIFI_ENABLED
+#include "include/connectivity/bluetooth_conn.h"
+#include "include/connectivity/wifi_conn.h"
+#include "include/connectivity/sm_webserver.h"
+#endif
+
 // Specialized modules
 #include "include/control/pid_manager.h"
 #include "include/safety/thermal_security.h"
@@ -74,7 +81,7 @@ struct Timer {
 	uint32_t interval;
 	uint32_t last;
 	Timer(uint32_t interval_)
-		: interval(interval_), last(0) {}
+	  : interval(interval_), last(0) {}
 	bool tick() {
 		uint32_t now = millis();
 		if (now - last >= interval) {
@@ -104,12 +111,12 @@ bool manualTurnoffHandled = true;
 
 void setup() {
 	Wire.begin();
-	//	Serial.begin(115200);
+//	Serial.begin(115200);
 
 #if LED_MANAGER_ENABLED
 	// Add LEDs ***************************************************************
 	ledManager.begin();  // Initializes strip, brightness, pattern
-	// End Add LEDs ************************************************************
+	                     // End Add LEDs ************************************************************
 #endif
 
 	pinMode(PIN_HEATER, OUTPUT);
@@ -122,7 +129,11 @@ void setup() {
 	sensorManager.begin();
 	stateManager.begin();
 	viewManager.begin(display);
-	// Serial.println("Made it here");
+	initControl();
+	initThermalSecurity();
+	setupPID();
+	initGPIOInterface();
+
 	// /*Comment out this section if you want to test in a breadboard
 	extern bool sht4Available;
 	if (!sht4Available) {
@@ -144,21 +155,18 @@ void setup() {
 
 	if (ScreenSaveTimer == 0) ScreenSaveTimer = millis();
 
-	initControl();
-	initThermalSecurity();
-	setupPID();
-	initGPIOInterface();
 
 	viewManager.setView(ViewID::SPLASH);
 	viewManager.draw();
 }
 
 void loop() {
+	//	Serial.println("Made it here");
 
 #if LED_MANAGER_ENABLED
 	// Add LEDs Check Mode **************************************************
 	ledManager.update();  // ← LED animation handler
-	//************************************************************************
+	                      //************************************************************************
 #endif
 
 	if (sensorTimer.tick()) sensorTask();
@@ -177,32 +185,47 @@ void loop() {
 			viewManager.setView(ViewID::STANDBY);
 			stateManager.setCurrentView(ViewID::STANDBY);
 			splashStartTime = 0;
+
+			// If Bluetooth/WiFi is enabled, we can perform a quick scan/connect
+			// here to avoid doing it later in the loop and potentially causing
+			// delays in sensor reading or display updates. This way, we can ensure
+			// connectivity is established while the splash screen is still showing,
+			// and it won't interfere with the main loop performance after the splash screen.
+			// Note: You will reamain in this state until a WIFI-network has been selected.
+			// The connected screen will be the main interface.
+#if BLUETOOTH_WIFI_ENABLED
+			connectivyTask();
+#endif
+
 			// After splash screen, check the last saved system state and restore it (OFF, STANDBY or ON)
 			if (stateManager.isPowerLossMemory()) {
 				if (readSystemStateEEPROM() == SYSTEM_OFF) {
-				}
-				else if (readSystemStateEEPROM() == SYSTEM_STANDBY) {
+				} else if (readSystemStateEEPROM() == SYSTEM_STANDBY) {
 					stateManager.setSystemState(SYSTEM_STANDBY);
 					setStandbyMode(true);
-				}
-				else if (readSystemStateEEPROM() == SYSTEM_ON) {
+				} else if (readSystemStateEEPROM() == SYSTEM_ON) {
 					stateManager.setSystemState(SYSTEM_ON);
 					setStandbyMode(false);
 					if (stateManager.getMode() == DRY_MODE_BY_TIME) {
 						stateManager.setDryStartTime(millis());
 						manualTurnoffHandled = false;
-					}
-					else {
+						stateManager.setManualTurnedOff(manualTurnoffHandled);
+					} else {
 						manualTurnoffHandled = true;
+						stateManager.setManualTurnedOff(manualTurnoffHandled);
 					}
 				}
 			}
 			// This section ends here
 		}
-	}
-	else if (stateTimer.tick()) updateStateTask();
+	} else if (stateTimer.tick()) updateStateTask();
 
 	handleButtonLogic();
+#if BLUETOOTH_WIFI_ENABLED
+	if (WiFi.status() == WL_CONNECTED) {
+		sswServer.smwebloop();
+	}
+#endif
 
 	if (stateManager.getScreenTimeout() > 0) {
 		static ViewID lastViewBeforeSleep = viewManager.getCurrentView();
@@ -217,12 +240,10 @@ void loop() {
 			ScreenSaveTimer = millis();
 			viewManager.setView(lastViewBeforeSleep);
 			buttonPressed = true;
-		}
-		else if ((buttonAction || buttonPlus || buttonMinus) && !buttonPressed && viewManager.getCurrentView() != ViewID::SCREEN_OFF) {
+		} else if ((buttonAction || buttonPlus || buttonMinus) && !buttonPressed && viewManager.getCurrentView() != ViewID::SCREEN_OFF) {
 			ScreenSaveTimer = millis();
 			buttonPressed = true;
-		}
-		else if (!buttonAction && !buttonPlus && !buttonMinus) {
+		} else if (!buttonAction && !buttonPlus && !buttonMinus) {
 			buttonPressed = false;
 		}
 	}
@@ -236,6 +257,8 @@ void loop() {
 			setStandbyMode(false);
 			handleSystemShutdown();
 			now = millis() / MINUTES_TO_MS;
+			if (stateManager.getDryStartTimer() > 0)
+				stateManager.setDryReStartTimer(millis());
 		}
 
 		// When the Start timer has reach 0, we need to turn we turn the system on, in DRY_MODE_BY_TIME, we set the dry start time to the moment of activation, so the timer starts counting down from there.
@@ -252,7 +275,9 @@ void handleButtonLogic() {
 	uint32_t now = millis();
 
 	static uint32_t actionPressStartTime = 0;
+	static uint32_t PlusButtonPressStartTime = 0;
 	static bool longPressActionTaken = false;
+	static bool longPressPlusButtonTaken = false;
 
 	buttonAction = digitalRead(PIN_ACTION_BUTTON) == HIGH;
 	buttonPlus = digitalRead(PIN_BUTTON_PLUS) == HIGH;
@@ -270,16 +295,19 @@ void handleButtonLogic() {
 			bool turnOn = !stateManager.isSystemOn();
 			stateManager.setSystemState(turnOn ? SYSTEM_ON : SYSTEM_OFF);
 			saveSystemStateEEPROM(stateManager.getSystemState());
+			Serial.print("readSystemStateEEPROM: ");
+			Serial.println(readSystemStateEEPROM());
 			setStandbyMode(false);
 			// When turning ON AND in DryTime mode, reset the dry timer to start counting from the moment of activation
 			if (turnOn && stateManager.getMode() == DRY_MODE_BY_TIME) {
 				stateManager.setDryStartTime(millis());
 				manualTurnoffHandled = false;
+				stateManager.setManualTurnedOff(manualTurnoffHandled);
 				// If not turned on, handle shutdown and turn off Heater and Fan immediately
-			}
-			else if (!turnOn) {
+			} else if (!turnOn) {
 				handleSystemShutdown();
 				manualTurnoffHandled = true;
+				stateManager.setManualTurnedOff(manualTurnoffHandled);
 			}
 		}
 		longPressActionTaken = true;
@@ -294,100 +322,120 @@ void handleButtonLogic() {
 			setStandbyMode(newState == SYSTEM_STANDBY);
 			if (newState == SYSTEM_OFF) handleSystemShutdown();
 			saveSystemStateEEPROM(stateManager.getSystemState());
-		}
-		else if (stateManager.getControlMode() == CONTROL_USER_TEMP || stateManager.getControlMode() == CONTROL_USER_HUM) {
+		} else if (stateManager.getControlMode() == CONTROL_USER_TEMP || stateManager.getControlMode() == CONTROL_USER_HUM) {
 			// System is ON - handle editing mode (only in USER mode)
 			ViewID currentView = stateManager.getCurrentView();
 			if (currentView == ViewID::TEMP || currentView == ViewID::HUM || currentView == ViewID::MODE
-				|| currentView == ViewID::DRY_TIME || currentView == ViewID::DRY_START
-				|| currentView == ViewID::POWEROUT || currentView == ViewID::SCREEN_SAVER) {
+			    || currentView == ViewID::DRY_TIME || currentView == ViewID::DRY_START
+			    || currentView == ViewID::POWEROUT || currentView == ViewID::SCREEN_SAVER) {
 				stateManager.setEditing(!stateManager.isEditing());
 				if (!stateManager.isEditing()) {
 					switch (currentView) {
-					case ViewID::TEMP: saveTargetTempEEPROM(stateManager.getTargetTemp()); break;
-					case ViewID::HUM: saveTargetHumEEPROM(stateManager.getTargetHumidity()); break;
-					case ViewID::MODE: saveModeEEPROM(stateManager.getMode()); break;
-					case ViewID::SCREEN_SAVER: saveScreenTimeoutEEPROM(stateManager.getScreenTimeout()); break;
-					case ViewID::POWEROUT: savePowerLossMemoryEEPROM(stateManager.isPowerLossMemory()); break;
-					case ViewID::DRY_TIME: saveDryDurationEEPROM(stateManager.getDryDuration()); break;
-					case ViewID::DRY_START: saveDryStartTimeEEPROM(stateManager.getDryStartTimer()); break;
+						case ViewID::TEMP: saveTargetTempEEPROM(stateManager.getTargetTemp()); break;
+						case ViewID::HUM: saveTargetHumEEPROM(stateManager.getTargetHumidity()); break;
+						case ViewID::MODE: saveModeEEPROM(stateManager.getMode()); break;
+						case ViewID::SCREEN_SAVER: saveScreenTimeoutEEPROM(stateManager.getScreenTimeout()); break;
+						case ViewID::POWEROUT: savePowerLossMemoryEEPROM(stateManager.isPowerLossMemory()); break;
+						case ViewID::DRY_TIME: saveDryDurationEEPROM(stateManager.getDryDuration()); break;
+						case ViewID::DRY_START: saveDryStartTimeEEPROM(stateManager.getDryStartTimer()); break;
 					}
 				}
 			}
 		}
 	}
+#if BLUETOOTH_WIFI_ENABLED
+	if (buttonPlus && !buttonPlusPrev) {
+		longPressPlusButtonTaken = false;  // Reset the long press flag when the button is released
+		PlusButtonPressStartTime = now;    // Reset the press start time for the next long press detection
+	}
+
+	/*
+	* Handle long press on plus button in system off mode to reset Bluetooth/WiFi setup and return to splash
+	* screen for reconfiguration. This allows users to easily restart the connectivity setup process without
+	* needing a separate reset button or power cycle, which can be especially useful if they need to connect
+	* to a new network or if there were issues with the previous connection.
+	*/
+	if (buttonPlus && (now - PlusButtonPressStartTime >= 2000) && !longPressPlusButtonTaken) {
+		if (stateManager.isSystemOff() && BLUETOOTH_WIFI_ENABLED) {
+			btExztra.resetConnectTimeout();
+			wifiExztra.resetWiFi();
+			connectivyTask();
+			//viewManager.setView(ViewID::SPLASH);
+			longPressPlusButtonTaken = true;  // Prevent this from triggering multiple times during the long press
+		}
+	}
+
+#endif
 
 	// Handle plus button logic - only in USER control mode or when in STANDBY (to allow mode change)
-	if (buttonPlus && ((stateManager.isSystemOn() && (stateManager.getControlMode() == CONTROL_USER_TEMP || stateManager.getControlMode() == CONTROL_USER_HUM)) || (stateManager.isSystemStandby()))) {
+	if (buttonPlus && !longPressPlusButtonTaken && ((stateManager.isSystemOn() && (stateManager.getControlMode() == CONTROL_USER_TEMP || stateManager.getControlMode() == CONTROL_USER_HUM)) || (stateManager.isSystemStandby()))) {
 		if (!stateManager.isEditing() && !buttonPlusPrev) {
 			if (stateManager.isSystemStandby()) {
 				// Only allow mode change in STANDBY state
 #if GPIO_INTERFACE_ENABLED
 				switch (stateManager.getControlMode()) {
-				case CONTROL_USER_TEMP: stateManager.setControlMode(CONTROL_USER_HUM); break;
-				case CONTROL_USER_HUM: stateManager.setControlMode(CONTROL_AUTO_TEMP); break;
-				case CONTROL_AUTO_TEMP: stateManager.setControlMode(CONTROL_AUTO_HUM); break;
-				case CONTROL_AUTO_HUM: stateManager.setControlMode(CONTROL_USER_TEMP); break;
-				default: stateManager.setControlMode(CONTROL_USER_TEMP); break;
+					case CONTROL_USER_TEMP: stateManager.setControlMode(CONTROL_USER_HUM); break;
+					case CONTROL_USER_HUM: stateManager.setControlMode(CONTROL_AUTO_TEMP); break;
+					case CONTROL_AUTO_TEMP: stateManager.setControlMode(CONTROL_AUTO_HUM); break;
+					case CONTROL_AUTO_HUM: stateManager.setControlMode(CONTROL_USER_TEMP); break;
+					default: stateManager.setControlMode(CONTROL_USER_TEMP); break;
 				}
 				saveControlModeEEPROM(stateManager.getControlMode());
 #else
 				// When GPIO is disabled, only USER mode is available
 				switch (stateManager.getControlMode()) {
-				case CONTROL_USER_TEMP: stateManager.setControlMode(CONTROL_USER_HUM); break;
-				case CONTROL_USER_HUM: stateManager.setControlMode(CONTROL_USER_TEMP); break;
-				default: stateManager.setControlMode(CONTROL_USER_TEMP); break;
+					case CONTROL_USER_TEMP: stateManager.setControlMode(CONTROL_USER_HUM); break;
+					case CONTROL_USER_HUM: stateManager.setControlMode(CONTROL_USER_TEMP); break;
+					default: stateManager.setControlMode(CONTROL_USER_TEMP); break;
 				}
 				saveControlModeEEPROM(CONTROL_USER_TEMP);
 #endif
-			}
-			else if (stateManager.isSystemOn()) {
+			} else if (stateManager.isSystemOn()) {
 				ViewID currentView = stateManager.getCurrentView();
 				ViewID nextView;
 				switch (currentView) {
-				case ViewID::INFO: nextView = ViewID::TEMP; break;
-				case ViewID::TEMP: nextView = (stateManager.getMode() == DRY_MODE_BY_HUM) ? ViewID::HUM : ViewID::DRY_TIME; break;
-				case ViewID::HUM: nextView = ViewID::INFO; break;
-				case ViewID::DRY_TIME: nextView = ViewID::DRY_START; break;
-				case ViewID::DRY_START: nextView = ViewID::INFO; break;
-				default: nextView = ViewID::INFO; break;
+					case ViewID::INFO: nextView = ViewID::TEMP; break;
+					case ViewID::TEMP: nextView = (stateManager.getMode() == DRY_MODE_BY_HUM) ? ViewID::HUM : ViewID::DRY_TIME; break;
+					case ViewID::HUM: nextView = ViewID::INFO; break;
+					case ViewID::DRY_TIME: nextView = ViewID::DRY_START; break;
+					case ViewID::DRY_START: nextView = ViewID::INFO; break;
+					default: nextView = ViewID::INFO; break;
 				}
 				stateManager.setCurrentView(nextView);
 				viewManager.setView(nextView);
 			}
-		}
-		else if (stateManager.isEditing() && now - lastButtonTime >= 100) {
+		} else if (stateManager.isEditing() && now - lastButtonTime >= 100) {
 			switch (stateManager.getCurrentView()) {
-			case ViewID::TEMP:
-			{
-				uint8_t currentTemp = stateManager.getTargetTemp();
-				if (currentTemp < TEMP_MAX) stateManager.setTargetTemp(currentTemp + 1);
-			}
-			break;
-			case ViewID::HUM:
-				if (stateManager.getTargetHumidity() < HUM_MAX) stateManager.setTargetHumidity(stateManager.getTargetHumidity() + 1);
-				break;
-			case ViewID::MODE:
-				stateManager.setMode(DRY_MODE_BY_HUM);
-				break;
-			case ViewID::DRY_TIME:
-				if (stateManager.getDryDuration() < DRY_DURATION_MAX) {
-					stateManager.setDryDuration(stateManager.getDryDuration() + DRY_DURATION_STEP);
-					stateManager.setDryStartTime(millis());
-				}
-				break;
-			case ViewID::POWEROUT:
-				stateManager.setPowerLossMemory(!stateManager.isPowerLossMemory());
-				break;
-			case ViewID::SCREEN_SAVER:
-				if (stateManager.getScreenTimeout() < SCREEN_TIMEOUT_MAX)
-					stateManager.setScreenTimeout(stateManager.getScreenTimeout() + 1);
-				break;
-			case ViewID::DRY_START:
-				if (stateManager.getDryStartTimer() < DRY_START_MAX) {
-					stateManager.setDryStartTimer(stateManager.getDryStartTimer() + DRY_START_STEP);
-				}
-				break;
+				case ViewID::TEMP:
+					{
+						uint8_t currentTemp = stateManager.getTargetTemp();
+						if (currentTemp < TEMP_MAX) stateManager.setTargetTemp(currentTemp + 1);
+					}
+					break;
+				case ViewID::HUM:
+					if (stateManager.getTargetHumidity() < HUM_MAX) stateManager.setTargetHumidity(stateManager.getTargetHumidity() + 1);
+					break;
+				case ViewID::MODE:
+					stateManager.setMode(DRY_MODE_BY_HUM);
+					break;
+				case ViewID::POWEROUT:
+					stateManager.setPowerLossMemory(!stateManager.isPowerLossMemory());
+					break;
+				case ViewID::SCREEN_SAVER:
+					if (stateManager.getScreenTimeout() < SCREEN_TIMEOUT_MAX)
+						stateManager.setScreenTimeout(stateManager.getScreenTimeout() + 1);
+					break;
+				case ViewID::DRY_TIME:
+					if (stateManager.getDryDuration() < DRY_DURATION_MAX) {
+						stateManager.setDryDuration(stateManager.getDryDuration() + DRY_DURATION_STEP);
+						stateManager.setDryStartTime(millis());
+					}
+					break;
+				case ViewID::DRY_START:
+					if (stateManager.getDryStartTimer() < DRY_START_MAX) {
+						stateManager.setDryStartTimer(stateManager.getDryStartTimer() + DRY_START_STEP);
+					}
+					break;
 			}
 			lastButtonTime = now;
 		}
@@ -399,49 +447,48 @@ void handleButtonLogic() {
 			ViewID currentView = stateManager.getCurrentView();
 			ViewID nextView;
 			switch (currentView) {
-			case ViewID::INFO: nextView = ViewID::MODE; break;
-			case ViewID::MODE: nextView = ViewID::POWEROUT; break;
-			case ViewID::POWEROUT: nextView = ViewID::SCREEN_SAVER; break;
-			case ViewID::SCREEN_SAVER: nextView = ViewID::INFO; break;
-			default: nextView = ViewID::INFO; break;
+				case ViewID::INFO: nextView = ViewID::MODE; break;
+				case ViewID::MODE: nextView = ViewID::POWEROUT; break;
+				case ViewID::POWEROUT: nextView = ViewID::SCREEN_SAVER; break;
+				case ViewID::SCREEN_SAVER: nextView = ViewID::INFO; break;
+				default: nextView = ViewID::INFO; break;
 			}
 			stateManager.setCurrentView(nextView);
 			viewManager.setView(nextView);
-		}
-		else if (stateManager.isEditing() && now - lastButtonTime >= 100) {
+		} else if (stateManager.isEditing() && now - lastButtonTime >= 100) {
 			switch (stateManager.getCurrentView()) {
-			case ViewID::TEMP:
-			{
-				uint8_t currentTemp = stateManager.getTargetTemp();
-				if (currentTemp > TEMP_MIN) stateManager.setTargetTemp(currentTemp - 1);
-			}
-			break;
-			case ViewID::HUM:
-				if (stateManager.getTargetHumidity() > HUM_MIN) stateManager.setTargetHumidity(stateManager.getTargetHumidity() - 1);
-				break;
-			case ViewID::MODE:
-				stateManager.setMode(DRY_MODE_BY_TIME);
-				stateManager.setDryStartTime(millis());
-				break;
-			case ViewID::POWEROUT:
-				stateManager.setPowerLossMemory(!stateManager.isPowerLossMemory());
-				break;
-			case ViewID::SCREEN_SAVER:
-				if (stateManager.getScreenTimeout() > 0)
-					stateManager.setScreenTimeout(stateManager.getScreenTimeout() - 1);
-				break;
-
-			case ViewID::DRY_TIME:
-				if (stateManager.getDryDuration() > DRY_DURATION_MIN) {
-					stateManager.setDryDuration(stateManager.getDryDuration() - DRY_DURATION_STEP);
+				case ViewID::TEMP:
+					{
+						uint8_t currentTemp = stateManager.getTargetTemp();
+						if (currentTemp > TEMP_MIN) stateManager.setTargetTemp(currentTemp - 1);
+					}
+					break;
+				case ViewID::HUM:
+					if (stateManager.getTargetHumidity() > HUM_MIN) stateManager.setTargetHumidity(stateManager.getTargetHumidity() - 1);
+					break;
+				case ViewID::MODE:
+					stateManager.setMode(DRY_MODE_BY_TIME);
 					stateManager.setDryStartTime(millis());
-				}
-				break;
-			case ViewID::DRY_START:
-				if (stateManager.getDryStartTimer() > DRY_START_MIN) {
-					stateManager.setDryStartTimer(stateManager.getDryStartTimer() - DRY_START_STEP);
-				}
-				break;
+					break;
+				case ViewID::POWEROUT:
+					stateManager.setPowerLossMemory(!stateManager.isPowerLossMemory());
+					break;
+				case ViewID::SCREEN_SAVER:
+					if (stateManager.getScreenTimeout() > 0)
+						stateManager.setScreenTimeout(stateManager.getScreenTimeout() - 1);
+					break;
+
+				case ViewID::DRY_TIME:
+					if (stateManager.getDryDuration() > DRY_DURATION_MIN) {
+						stateManager.setDryDuration(stateManager.getDryDuration() - DRY_DURATION_STEP);
+						stateManager.setDryStartTime(millis());
+					}
+					break;
+				case ViewID::DRY_START:
+					if (stateManager.getDryStartTimer() > DRY_START_MIN) {
+						stateManager.setDryStartTimer(stateManager.getDryStartTimer() - DRY_START_STEP);
+					}
+					break;
 			}
 			lastButtonTime = now;
 		}
@@ -491,8 +538,7 @@ void handleButtonLogic() {
 					ledManager.nextBrightness();
 					longPressActionTaken = true;
 				}
-			}
-			else {
+			} else {
 				// Button is stably released
 				buttonMinusPressStartTime = 0;
 				longPressActionTaken = false;
@@ -538,8 +584,7 @@ void handleButtonLogic() {
 		// information is always relevant to the current system state and mode.
 		// If user is in a settings view (TEMP, HUM, MODE, DRY_TIME) when turning off, we can allow that to remain as it is less
 		// disruptive than forcing STANDBY. The user can then navigate back to STANDBY if they want.
-	}
-	else {
+	} else {
 		ViewID currentView = viewManager.getCurrentView();
 		// Only force INFO view if coming from STANDBY or if view is incompatible with current mode
 		if (currentView == ViewID::STANDBY) {
@@ -554,11 +599,118 @@ void handleButtonLogic() {
 			// rather than being forced to switch to INFO and then navigate back to HUM.
 			// This logic prioritizes user context and minimizes unnecessary view changes while ensuring that the displayed
 			// information is always relevant to the current system state and mode.
-		}
-		else if ((stateManager.getMode() == DRY_MODE_BY_HUM && currentView == ViewID::DRY_TIME)
-			|| (stateManager.getMode() == DRY_MODE_BY_TIME && currentView == ViewID::HUM)) {
+		} else if ((stateManager.getMode() == DRY_MODE_BY_HUM && currentView == ViewID::DRY_TIME)
+		           || (stateManager.getMode() == DRY_MODE_BY_TIME && currentView == ViewID::HUM)) {
 			viewManager.setView(ViewID::INFO);
 			stateManager.setCurrentView(ViewID::INFO);
 		}
 	}
 }
+
+#if BLUETOOTH_WIFI_ENABLED
+void connectivyTask() {
+	// Start non-blocking scans with small timeouts btExztra.startBTSetup();
+	// should return immediately or use callbacks wifiExztra.startScanWithTimeout(3000);
+	// scan for networks up to 3s, then return
+	// optionally attempt auto-connect if credentials exist:
+
+	uint32_t ipConfigScreenTimer = 0;
+	if (wifiExztra.hasSavedCredentials()) {
+		wifiExztra.connectAsync();
+		ipConfigScreenTimer = millis();
+	}
+
+	/*
+	* A check has to be made that the save SSID also exists in the scan results,
+	* otherwise we might end up in a situation where the device tries to connect to a
+	* network that is not available, causing long timeouts and a bad user experience.
+	* By ensuring that the saved SSID is present in the current scan results before attempting to connect,
+	* we can avoid unnecessary connection attempts and provide a smoother experience for the user.
+	*/
+
+
+	// Start non-blocking scans/connect
+	static bool wifiSetupStarted = false;
+	if (!wifiSetupStarted) {
+		btExztra.startBTSetup();  // non-blocking or callback-based
+		wifiSetupStarted = true;
+	}
+
+	while (WiFi.status() != WL_CONNECTED && digitalRead(PIN_BUTTON_MINUS) == LOW) {
+		if (btExztra.isConnectTimeout()) break;
+		while (!btExztra.isDeviceConnected()) {
+			if (btExztra.isConnectTimeout()) break;
+			if (digitalRead(PIN_BUTTON_MINUS) == HIGH) break;  // allow exit with button
+			wifiExztra.setSSIDselected(false);
+			wifiExztra.clearSSIDList();
+			btExztra.connectReceive();
+			// update short tasks to keep UI/sensors responsive
+			viewManager.draw();  // keep splash animation alive
+			//	if (btExztra.isDeviceConnected()) break;
+			delay(10);  // small yield to avoid busy loop
+		}
+		while (btExztra.isDeviceConnected() && !wifiExztra.getSSIDselected()) {
+			viewManager.draw();  // keep splash animation alive
+			btExztra.connectReceive();
+			wifiExztra.WiFi_search();
+			// update short tasks to keep UI/sensors responsive
+			delay(10);  // small yield to avoid busy loop
+		}
+		while (btExztra.isDeviceConnected() && wifiExztra.getSSIDselected()) {
+			viewManager.draw();  // keep splash animation alive
+			btExztra.connectReceive();
+			wifiExztra.setSSIDcredentials();
+			if (WiFi.status() == WL_CONNECTED) break;
+			// update short tasks to keep UI/sensors responsive
+			delay(10);  // small yield to avoid busy loop}
+		}
+	}
+
+	/*
+	* Stay on the IP information screen until a button is pressed or the timer has passed
+	*/
+	while (digitalRead(PIN_BUTTON_MINUS) == LOW
+	       && digitalRead(PIN_BUTTON_PLUS) == LOW
+	       && digitalRead(PIN_ACTION_BUTTON) == LOW
+	       && (ipConfigScreenTimer == 0 || (ipConfigScreenTimer > 0 && millis() - ipConfigScreenTimer < 10000))) {
+		viewManager.setView(ViewID::WIFI_CONNECTED);
+		viewManager.draw();  // keep splash animation alive
+	}
+
+	if (WiFi.status() == WL_CONNECTED) {
+		sswServer.smwebsetup();
+	}
+	viewManager.setView(ViewID::STANDBY);
+	stateManager.setCurrentView(ViewID::STANDBY);
+}
+
+extern "C" void turnSystemOff() {
+	stateManager.setSystemState(SYSTEM_OFF);
+	saveSystemStateEEPROM(stateManager.getSystemState());
+	setStandbyMode(false);
+	handleSystemShutdown();
+	if (stateManager.getMode() == DRY_MODE_BY_TIME) {
+		manualTurnoffHandled = true;
+		stateManager.setManualTurnedOff(manualTurnoffHandled);
+	}
+}
+
+extern "C" void turnSystemStandby() {
+	stateManager.setSystemState(SYSTEM_STANDBY);
+	saveSystemStateEEPROM(stateManager.getSystemState());
+	setStandbyMode(true);
+}
+
+extern "C" void turnSystemOn() {
+	stateManager.setSystemState(SYSTEM_ON);
+	saveSystemStateEEPROM(stateManager.getSystemState());
+	setStandbyMode(false);
+	if (stateManager.getMode() == DRY_MODE_BY_TIME) {
+		stateManager.setDryStartTime(millis());
+		manualTurnoffHandled = false;
+		stateManager.setManualTurnedOff(manualTurnoffHandled);
+		// If not turned on, handle shutdown and turn off Heater and Fan immediately
+	}
+}
+
+#endif

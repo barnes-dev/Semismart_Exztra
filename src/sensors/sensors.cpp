@@ -43,7 +43,16 @@ bool validateTemperatureReading(int16_t temp) {
 }
 
 int16_t readThermistorTemperature() {
+
+#if TEMP_SENSOR
+#if ARDUINO_ESP32
+    int analogValue = analogRead(NTC_PIN) / 4;
+#else
     int analogValue = analogRead(NTC_PIN);
+#endif
+#else
+    int analogValue = SECURITY_NO_SENSOR;
+#endif
     uint32_t currentTime = millis();
     if (analogValue < SECURITY_MIN_ADC_VALUE || analogValue > SECURITY_MAX_ADC_VALUE) {
         if (!sensorInErrorState) lastErrorTime = currentTime, sensorInErrorState = true;

@@ -11,6 +11,16 @@
 #include <stdint.h>
 #include "../core/state_manager.h"
 #include "../sensors/sensor_manager.h"
+#include "../../include/safety/thermal_security.h"
+#include "../../include/control/control.h"
+#include "../../include/utils/strings.h"
+#include "../../include/control/pid_manager.h"
+#include <Adafruit_SSD1306.h>
+#include <Fonts/FreeSans9pt7b.h>
+#if BLUETOOTH_WIFI_ENABLED
+#include "../../include/connectivity/bluetooth_conn.h"
+#include "../../include/connectivity/wifi_conn.h"
+#endif
 
 class Adafruit_SSD1306;
 class ViewManager {
@@ -36,6 +46,14 @@ private:
 	void ScreenSaverOn();
 	void StartSubScreens(const char* title, uint8_t xpos);
 	void TimeConfiguration(uint32_t TimeVariable);
+#if BLUETOOTH_WIFI_ENABLED
+    void drawBTScanning();
+    void drawBTConnected();
+    void drawWifiScanning();
+    void drawWifiSelect();
+    void drawWifiConnected();
+    void wifiStatusSymbol();
+#endif
 
     Adafruit_SSD1306* _display = nullptr;            
     ViewID _currentView = ViewID::STANDBY;

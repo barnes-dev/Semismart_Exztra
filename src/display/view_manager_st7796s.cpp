@@ -1,22 +1,12 @@
-#include "../../include/safety/thermal_security.h"
+#include "../../user_config.h"
 #if DISPLAY_TYPE_ST7796S
 #include "../../include/display/view_manager_st7796s.h"
-#include "../../include/control/control.h"
-#include "../../include/utils/strings.h"
-#include "../../include/control/pid_manager.h"
-#include <Adafruit_ST7796S.h>
-//#include <Fonts/FreeSansBold18pt7b.h>  // A custom font
-#include "../../include/utils/icons.h"
-#include <cstring>
-#if LED_MANAGER_ENABLED
-#include "../../include/lights/LEDManager.h"
-extern LEDManager ledManager;
-#endif
 // This is a faster option with HW SPI, but it requires using the hardware SPI pins (SCLK and MOSI) for the display, 
 // which may limit pin availability for other components on the Arduino Nano. 
 // If you have enough pins available and your display supports hardware SPI, 
 // this is the recommended option for better performance.
-Adafruit_ST7796S display(CS_PIN, DC_PIN, RST_PIN); 
+Adafruit_ST7796S display(CS_PIN, DC_PIN, RST_PIN);
+
 // This is a very slow option with SW SPI, but it allows us to use the same pins for the display as for the other components, 
 // which is necessary on the Arduino Nano with limited pins. For better performance, 
 // consider using hardware SPI pins if your display supports it and if you have enough pins available.
@@ -53,7 +43,6 @@ void ViewManager::draw() {
 		lastView = _currentView;
 		stringDisplayed = false; // Reset string displayed flag when view changes
 	}
-
 	if (!_display) return;
 	switch (_currentView) {
 	case ViewID::SPLASH: drawSplash(); break;
@@ -68,6 +57,13 @@ void ViewManager::draw() {
 	case ViewID::SCREEN_OFF: ScreenSaverOn(); break;
 	case ViewID::SENSOR_ERROR: TempSensorError(); break;
 	case ViewID::SCREEN_SAVER: drawScreenSaverSetting(); break;
+#if BLUETOOTH_WIFI_ENABLED
+	case ViewID::BT_SCANNING: drawBTScanning(); break;
+	case ViewID::BT_CONNECTED: drawBTConnected(); break;
+	case ViewID::WIFI_SCANNING: drawWifiScanning(); break;
+	case ViewID::WIFI_SELECT: drawWifiSelect(); break;
+	case ViewID::WIFI_CONNECTED: drawWifiConnected(); break;
+#endif
 	default: drawInfo(); break;
 	}
 }
@@ -83,15 +79,17 @@ void ViewManager::drawSplash() {
 	_display->setTextSize(3);
 	_display->setTextColor(ST7796_WHITE);
 
+#if LED_MANAGER_ENABLED && ARDUINO_ESP32
+	_display->drawRGBBitmap((SCREEN_WIDTH / 2) - 100, SCREEN_HEIGHT / 12, Voxel_Logo_Color_Inv, 200, 200);  //  Draw a Voxel Logo icon at the end of the temp printout
+#else
 	_display->drawRGBBitmap((SCREEN_WIDTH / 2) - 120, SCREEN_HEIGHT / 12, Voxel_Logo_Color_Inv, 240, 240);  //  Draw a Voxel Logo icon at the end of the temp printout
+#endif
 
 	_display->setTextSize(2);
 	_display->getTextBounds(str_code_by, 0, 0, &bx, &by, &w1, &h1);
 	int16_t x1 = (SCREEN_WIDTH - w1) / 2;
 	_display->setCursor(x1, SCREEN_HEIGHT / 1.548387f);  //changed for SH1107
 	printProgmemString(_display, str_code_by);
-
-	//_display->display();
 }
 
 //====================================================================================================
@@ -209,6 +207,9 @@ void ViewManager::drawStandby() {
 	drawHeaterStatus();
 #if LED_MANAGER_ENABLED
 	drawLEDStatus();
+#endif
+#if BLUETOOTH_WIFI_ENABLED
+	wifiStatusSymbol();
 #endif
 	// End of updated code /////////////////////////////////////////////////////////////////////////
 }
@@ -343,6 +344,7 @@ void ViewManager::drawInfo() {
 			uint32_t remainingSeconds = stateManager.getRemainingDryTime();
 			uint16_t hours = remainingSeconds / SECONDS_PER_HOUR;
 			uint16_t minutes = (remainingSeconds % SECONDS_PER_HOUR) / 60;
+			uint16_t seconds = (remainingSeconds % 60);
 			static uint16_t minutes_temp = -1;
 
 			// Combined buffer for label + formatted time "str_eta_label HH:MM"
@@ -350,12 +352,12 @@ void ViewManager::drawInfo() {
 
 			// Build a single line string with the PROGMEM label and formatted time.
 			// getProgmemString returns a regular const char* here, so it's safe to use in snprintf.
-			snprintf(timeBuf, sizeof(timeBuf), "%s %02u:%02u", getProgmemString(str_eta_label), hours, minutes);
+			snprintf(timeBuf, sizeof(timeBuf), "%s %02u:%02u:%02u", getProgmemString(str_eta_label), hours, minutes, seconds);
 			_display->setTextSize(4);
 			//_display->setFont(&FreeSansBold18pt7b);
 			_display->getTextBounds(timeBuf, 0, 0, &bx, &by, &w1, &h1);
-			if (minutes != minutes_temp) {
-				minutes_temp = minutes;
+			if (seconds != minutes_temp) {
+				minutes_temp = seconds;
 				_display->fillRect(0, HeightOnScreen, SCREEN_WIDTH, h1, ST7796_BLACK); // Clear previous time
 			}
 			_display->setCursor((SCREEN_WIDTH / 2) - (w1 / 2), HeightOnScreen);
@@ -364,18 +366,22 @@ void ViewManager::drawInfo() {
 			HeightOnScreen += h1 + PixelsBetweenRows;
 		}
 
+
 		//====================================================================================================
 		// Show Fan, Temp and LED status with big text and icons
 		// common for PRINTING and DRYING modes
 		//====================================================================================================
-
 		drawFanStatus();
 		drawHeaterStatus();
 #if LED_MANAGER_ENABLED
 		drawLEDStatus();
 #endif
+#if BLUETOOTH_WIFI_ENABLED
+		wifiStatusSymbol();
+#endif
 	}
 }
+
 
 //============================================================================================================
 // This function initializes the layout for sub-screens (like settings screens) with a title and prepares
@@ -460,6 +466,9 @@ void ViewManager::drawTempConfig() {
 	HeightOnScreen += h1 + PixelsBetweenRows;
 	SaveEnterText();
 	_display->drawBitmap(((SCREEN_WIDTH / 2) - 32), HeightOnScreen, temp_icon_64x64, 64, 64, ST7796_RED);  //  Draw a thermometer icon at the end of the temp printout
+#if BLUETOOTH_WIFI_ENABLED
+	wifiStatusSymbol();
+#endif
 }
 
 //============================================================================================================
@@ -501,6 +510,9 @@ void ViewManager::drawHumConfig() {
 	HeightOnScreen += h1 + PixelsBetweenRows;
 	SaveEnterText();
 	_display->drawBitmap(((SCREEN_WIDTH / 2) - 32), HeightOnScreen, humidity_icon_64x64, 64, 64, ST7796_BLUE);  //  Draw droplets icon at the end of the humidity printout
+#if BLUETOOTH_WIFI_ENABLED
+	wifiStatusSymbol();
+#endif
 }
 
 //============================================================================================================
@@ -546,8 +558,11 @@ void ViewManager::drawScreenSaverSetting() {
 	HeightOnScreen += h1 + PixelsBetweenRows;
 	SaveEnterText();
 	_display->drawBitmap(((SCREEN_WIDTH / 2) - 50), HeightOnScreen, screen_saver_100x93, 100, 93, ST7796_YELLOW);  //  Draw droplets icon at the end of the humidity printout
+#if BLUETOOTH_WIFI_ENABLED
+	wifiStatusSymbol();
+#endif
 }
-	
+
 //============================================================================================================
 // This function draws the drying time configuration screen, allowing the user to set the duration for time-based drying mode.
 // It includes a flashing effect on the time value when in edit mode and displays relevant icons and instructions.
@@ -592,6 +607,9 @@ void ViewManager::drawDryTimeConfig() {
 	HeightOnScreen += h1 + PixelsBetweenRows;
 	SaveEnterText();
 	_display->drawBitmap(((SCREEN_WIDTH / 2) - 50), HeightOnScreen, clock_icon_100x100, 100, 100, ST7796_WHITE);  //  Draw a filament icon at the end of the time printout
+#if BLUETOOTH_WIFI_ENABLED
+	wifiStatusSymbol();
+#endif
 }
 
 
@@ -633,7 +651,7 @@ void ViewManager::drawDryTimeStartConfig() {
 		if (stateManager.getDryStartTimer() != lastStartTime) {
 			lastStartTime = stateManager.getDryStartTimer();
 			_display->fillRect((SCREEN_WIDTH / 2 - w1 / 2) - 10, HeightOnScreen - 10, w1 + 20, h1 + 12, ST7796_BLACK);
-		}				
+		}
 	}
 	_display->setTextColor(stateManager.isEditing() ? ST7796_BLACK : ST7796_WHITE);
 	_display->setCursor(((SCREEN_WIDTH / 2) - (w1 / 2)), HeightOnScreen);
@@ -642,6 +660,9 @@ void ViewManager::drawDryTimeStartConfig() {
 	HeightOnScreen += h1 + PixelsBetweenRows;
 	SaveEnterText();
 	_display->drawBitmap(((SCREEN_WIDTH / 2) - 50), HeightOnScreen, timer_icon_100x112, 100, 112, ST7796_WHITE);  //  Draw a filament icon at the end of the time printout
+#if BLUETOOTH_WIFI_ENABLED
+	wifiStatusSymbol();
+#endif
 }
 
 //============================================================================================================
@@ -675,13 +696,16 @@ void ViewManager::drawPowerOutageMemory() {
 			_display->fillRect(0, HeightOnScreen - 10, SCREEN_WIDTH, h1 + 12, ST7796_BLACK);
 		}
 	}
- 	_display->setTextColor(stateManager.isEditing() ? ST7796_BLACK : ST7796_WHITE);
+	_display->setTextColor(stateManager.isEditing() ? ST7796_BLACK : ST7796_WHITE);
 	_display->setCursor(((SCREEN_WIDTH / 2) - (w1 / 2)), HeightOnScreen);
-	printProgmemString(_display, stateManager.isPowerLossMemory() == false ? str_power_off : str_last_mode		);
+	printProgmemString(_display, stateManager.isPowerLossMemory() == false ? str_power_off : str_last_mode);
 	_display->setTextColor(ST7796_WHITE);
 	HeightOnScreen += h1 + PixelsBetweenRows;
 	SaveEnterText();
 	_display->drawRGBBitmap((SCREEN_WIDTH / 2) - 50, HeightOnScreen, PowerOutageIcon_100x100_color, 100, 100);  // Draw Power outage icon with color support
+#if BLUETOOTH_WIFI_ENABLED
+	wifiStatusSymbol();
+#endif
 }
 
 //============================================================================================================
@@ -721,6 +745,9 @@ void ViewManager::drawModeConfig() {
 	HeightOnScreen += h1 + PixelsBetweenRows;
 	SaveEnterText();
 	_display->drawBitmap(((SCREEN_WIDTH / 2) - 50), HeightOnScreen, modeicon_100x100, 100, 100, ST7796_YELLOW);  //  Draw mode icon at the end of the mode printout
+#if BLUETOOTH_WIFI_ENABLED
+	wifiStatusSymbol();
+#endif
 }
 
 void ViewManager::TempSensorError() {
@@ -1011,5 +1038,289 @@ void ViewManager::drawLEDStatus() {
 	_display->print(ledManager.getBrightnessLevel());
 }
 #endif	// LED_MANAGER_ENABLED
+
+#if BLUETOOTH_WIFI_ENABLED
+//============================================================================================================
+// This is the Bluetooth scanning screen, which shows an animation of a Bluetooth icon while the system is 
+// scanning for Bluetooth devices. It will also show when the scanning is compete and connection is esablished.
+// The animation is achieved by toggling the display of the Bluetooth icon every 500ms.
+// ===========================================================================================================
+void ViewManager::drawBTScanning() {
+	stringDisplayed = false;
+	extern StateManager stateManager;
+	static bool lastTitleShow = false;
+	static bool isEditingLast = false;
+	int16_t bx, by;
+	uint16_t w1, h1;
+
+	StartSubScreens(str_BT_scanning1, 4);
+	_display->setTextSize(3);
+	SecondTitleRow(str_BT_scanning2);
+	_display->setTextSize(8);
+
+	static uint8_t BTiconFrame = 0;
+	static uint32_t lastBTAnim = 0;
+
+	static int instructionDisplayed = -1;
+	if (instructionDisplayed != BTiconFrame) {
+		instructionDisplayed = BTiconFrame;
+		_display->setTextSize(2);
+		_display->fillRect(5, SCREEN_HEIGHT - 60, SCREEN_WIDTH - 10, 55, (BTiconFrame == 0 ? ST7796_BLACK : ST7796_RED)); // Clear area for instructions
+		_display->getTextBounds(str_exit_config2, 0, 0, &bx, &by, &w1, &h1);
+		_display->setTextColor(ST7796_WHITE);
+		_display->setCursor((SCREEN_WIDTH / 2) - (w1 / 2), SCREEN_HEIGHT - 10 - (h1 + PixelsBetweenRows));
+		_display->print(getProgmemString(str_exit_config2));
+		_display->getTextBounds(str_exit_config1, 0, 0, &bx, &by, &w1, &h1);
+		_display->setCursor((SCREEN_WIDTH / 2) - (w1 / 2), SCREEN_HEIGHT - 10 - (2 * (h1 + PixelsBetweenRows)));
+		_display->print(getProgmemString(str_exit_config1));
+	}
+
+	if (millis() - lastBTAnim > 333) { // Change frame every 333ms
+		lastBTAnim = millis();
+			_display->fillRect((SCREEN_WIDTH / 2) - 50, (SCREEN_HEIGHT / 2) - 55, 100, 111, ST7796_BLACK); // Clear the Bluetooth icon to create a blinking effect
+		switch (BTiconFrame) {
+		case 0:
+			_display->drawBitmap((SCREEN_WIDTH / 2) - 50, (SCREEN_HEIGHT / 2) - 55, bt_icon_100x111, 100, 111, ST7796_BLUE);  //  Draw a Bluetooth icon below the text
+			BTiconFrame = 1;
+			break;
+		case 1:
+			_display->drawBitmap((SCREEN_WIDTH / 2) - 50, (SCREEN_HEIGHT / 2) - 55, bt_icon1_100x111, 100, 111, ST7796_BLUE);  //  Draw a Bluetooth icon below the text
+			BTiconFrame = 2;
+			break;
+		case 2:
+			_display->drawBitmap((SCREEN_WIDTH / 2) - 50, (SCREEN_HEIGHT / 2) - 55, bt_icon2_100x111, 100, 111, ST7796_BLUE);  //  Draw a Bluetooth icon below the text
+			BTiconFrame = 0;
+			break;
+		}
+	}
+}
+
+/*
+* This screen is shown when the Bluetooth connection is successful,
+* and shows the device name if available.
+*/
+void ViewManager::drawBTConnected() {
+	stringDisplayed = false;
+	StartSubScreens(str_bluetooth_connected, 4);
+	_display->setTextSize(3);
+	//	if (btExztra.getDeviceName()[0] != '\0') {
+	//		SecondTitleRow(btExztra.getDeviceName().c_str());
+	//	}
+	//	else {
+	SecondTitleRow(str_BT_connected_no_name);
+	//	}
+	_display->drawBitmap((SCREEN_WIDTH / 2) - 50, (SCREEN_HEIGHT / 2) - 55, bt_icon_100x111, 100, 111, ST7796_BLUE);  //  Draw a Bluetooth icon below the text
+}
+
+//============================================================================================================
+// This function display that the Bluetooth connection is successful, and shows the device name if available.
+// The Wifi scanning is then started and is shown
+//============================================================================================================
+void ViewManager::drawWifiScanning() {
+	stringDisplayed = false;
+	int16_t bx, by;
+	uint16_t w1, h1;
+	StartSubScreens(str_wifi, 8);
+
+	static bool NoNetworsFoundDisplayed = false;
+	if (wifiExztra.isNumberofNetworksFound() == 0 && !NoNetworsFoundDisplayed) {
+		_display->setTextSize(3);
+		_display->getTextBounds(str_wifi_no_networks_1, 0, 0, &bx, &by, &w1, &h1);
+		_display->setCursor(((SCREEN_WIDTH / 2) - (w1 / 2)), HeightOnScreen);
+		printProgmemString(_display, str_wifi_no_networks_1);
+		NoNetworsFoundDisplayed = true;
+	}
+	else if (wifiExztra.isNumberofNetworksFound() > 0) {
+		if (NoNetworsFoundDisplayed) {
+			_display->setTextSize(3);
+			_display->getTextBounds(str_wifi_no_networks_1, 0, 0, &bx, &by, &w1, &h1);
+			_display->fillRect(0, HeightOnScreen, SCREEN_WIDTH, h1, ST7796_BLACK);
+			NoNetworsFoundDisplayed = false;
+		}
+		_display->setTextSize(2);
+		_display->setCursor(1, HeightOnScreen);
+		printProgmemString(_display, str_wifi_list_divider);
+		printProgmemString(_display, str_wifi_list_networks_Nr);
+		printProgmemString(_display, str_wifi_list_divider);
+		printProgmemString(_display, str_wifi_list_networks_SSID);
+		_display->getTextBounds(str_wifi_list_networks_SSID, 0, 0, &bx, &by, &w1, &h1);
+		HeightOnScreen += h1 + PixelsBetweenRows;
+		for (int i = 0; i < wifiExztra.isNumberofNetworksFound() && i < MAX_WIFI_NETWORKS; i++) {
+			_display->setCursor(1, HeightOnScreen + (i * (h1 + PixelsBetweenRows)));
+			printProgmemString(_display, str_wifi_list_divider);
+			_display->printf("%2d", i + 1);
+			printProgmemString(_display, str_wifi_list_divider);
+			static char ssidBuf[33];
+			ssidBuf[0] = '\0';
+			strncpy(ssidBuf, wifiExztra.getyourSSID(i).c_str(), sizeof(ssidBuf) - 1);
+			ssidBuf[sizeof(ssidBuf) - 1] = '\0';
+			_display->printf("%-32.32s", ssidBuf);
+		}
+	}
+	_display->setTextSize(2);
+	_display->getTextBounds(str_bluetooth_instruction3, 0, 0, &bx, &by, &w1, &h1);
+	_display->setTextColor(ST7796_WHITE);
+	_display->setCursor(5, SCREEN_HEIGHT - 100 - (h1 + PixelsBetweenRows));
+	_display->print(getProgmemString(str_bluetooth_instruction3));
+	_display->setCursor(5, SCREEN_HEIGHT - 100 - (2 * (h1 + PixelsBetweenRows)));
+	_display->print(getProgmemString(str_bluetooth_instruction2));
+	_display->setCursor(5, SCREEN_HEIGHT - 100 - (3 * (h1 + PixelsBetweenRows)));
+	_display->print(getProgmemString(str_bluetooth_instruction1));
+	_display->drawBitmap((SCREEN_WIDTH / 2) - 72, SCREEN_HEIGHT - 100, wifi_icon_144x100, 144, 100, ST7796_YELLOW);  //  Draw a WiFi icon below the text
+}
+
+//============================================================================================================
+// This function displays the WiFi network selection screen, allowing the user to choose from the list of
+// available WiFi networks. It shows the list of networks with their corresponding numbers for selection and includes
+// an icon to indicate WiFi settings.
+//============================================================================================================
+void ViewManager::drawWifiSelect() {
+	stringDisplayed = false;
+	int16_t bx, by;
+	uint16_t w1, h1;
+	StartSubScreens(str_wifi_connecting, 3);
+	_display->drawBitmap((SCREEN_WIDTH / 2) - 72, HeightOnScreen, wifi_icon_144x100, 144, 100, ST7796_YELLOW);  //  Draw a WiFi icon below the text
+	_display->setTextSize(5);
+	HeightOnScreen += 100 + PixelsBetweenRows;
+	_display->getTextBounds(str_wifi_list_networks_SSID, 0, 0, &bx, &by, &w1, &h1);
+	_display->setCursor(10, HeightOnScreen);
+	_display->printf("%-32s", str_wifi_list_networks_SSID);
+	HeightOnScreen += h1 + PixelsBetweenRows;
+	_display->setTextSize(4);
+	_display->setCursor(10, HeightOnScreen);
+	String selectedSSID = wifiExztra.getTheSSID();
+	if (!selectedSSID.isEmpty()) {
+		_display->printf("%-32s", selectedSSID.c_str());
+	}
+	else {
+		_display->print(getProgmemString(str_wifi_no_networks_1));
+	}
+	HeightOnScreen += (2 * h1) + PixelsBetweenRows;
+	_display->setTextSize(2);
+	_display->getTextBounds(str_bluetooth_instruction1, 0, 0, &bx, &by, &w1, &h1);
+	_display->setCursor(5, HeightOnScreen);
+	_display->print(getProgmemString(str_bluetooth_instruction1));
+	HeightOnScreen += h1 + PixelsBetweenRows;
+	_display->setCursor(5, HeightOnScreen);
+	_display->print(getProgmemString(str_bluetooth_instruction4));
+	HeightOnScreen += h1 + PixelsBetweenRows;
+	_display->setCursor(5, HeightOnScreen);
+	_display->print(getProgmemString(str_bluetooth_instruction5));
+}
+
+
+//============================================================================================================
+// This function displays the WiFi connection successful screen, showing the connected network's SSID and
+// an icon to indicate successful connection. It is shown after the user selects a WiFi network and the connection is established.
+//============================================================================================================
+void ViewManager::drawWifiConnected() {
+	stringDisplayed = false;
+	int16_t bx, by;
+	uint16_t w1, h1;
+	static uint8_t wifiStatusTemp = -1;
+	static uint8_t currentStatus = -1;
+	static uint32_t lastStatusChangeTime = 0;
+	static bool blinker = false;
+	_display->setTextColor(ST7796_WHITE);
+	StartSubScreens(str_wifi_connected_3, 3);
+
+	_display->setTextSize(5);
+	_display->getTextBounds(str_wifi_list_networks_SSID, 0, 0, &bx, &by, &w1, &h1);
+	_display->setCursor(10, HeightOnScreen);
+	_display->printf("%-32s", str_wifi_list_networks_SSID);
+	HeightOnScreen += h1 + PixelsBetweenRows;
+	_display->setTextSize(4);
+	_display->setCursor(10, HeightOnScreen);
+	String selectedSSID = wifiExztra.getTheSSID();
+	// Ensure the SSID is not too long for the display
+	// We will print a maximum of 32 characters for the SSID, and if it's longer, it will be truncated with "..." at the end.
+	if (selectedSSID.length() <= 15) {
+		_display->getTextBounds(selectedSSID.c_str(), 0, 0, &bx, &by, &w1, &h1);
+		if (selectedSSID.length() > 12) {
+			selectedSSID = selectedSSID.substring(0, 9) + "...";
+		}
+		_display->printf("%-12.12s", selectedSSID.c_str());
+	}
+	else if (selectedSSID.length() > 15) {
+		_display->setTextSize(3);
+		_display->getTextBounds(selectedSSID.c_str(), 0, 0, &bx, &by, &w1, &h1);
+		if (selectedSSID.length() > 25) {
+			selectedSSID = selectedSSID.substring(0, 22) + "...";
+		}
+		_display->printf("%-25.25s", selectedSSID.c_str());
+	}
+	HeightOnScreen += h1 + (4 * PixelsBetweenRows);
+
+	_display->setTextSize(3);
+	_display->getTextBounds(str_wifi_status, 0, 0, &bx, &by, &w1, &h1);
+	_display->setCursor(5, HeightOnScreen);
+	_display->print(getProgmemString(str_wifi_status));
+
+	currentStatus = wifiExztra.getWiFiStatus();
+	HeightOnScreen += h1 + PixelsBetweenRows;
+
+	if (wifiStatusTemp != currentStatus) {
+		wifiStatusTemp = currentStatus;
+		_display->getTextBounds(str_wifi_status, 0, 0, &bx, &by, &w1, &h1);
+		_display->fillRect(0, HeightOnScreen, SCREEN_WIDTH, h1, ST7796_BLACK);
+		_display->setCursor(5, HeightOnScreen);
+		switch (currentStatus) {
+		case WL_NO_SSID_AVAIL: _display->print(getProgmemString(str_wifi_no_networks_1)); break;
+		case WL_SCAN_COMPLETED: _display->print(getProgmemString(str_wifi_scan_completed_2)); break;
+		case WL_CONNECTED: _display->print(getProgmemString(str_wifi_connected_3)); break;
+		case WL_CONNECT_FAILED: _display->print(getProgmemString(str_connection_failed_4)); break;
+		case WL_CONNECTION_LOST: _display->print(getProgmemString(str_connection_lost_5)); break;
+		case WL_DISCONNECTED: _display->print(getProgmemString(str_wifi_disconnected_6)); break;
+		}
+	}
+	HeightOnScreen += h1 + (3 * PixelsBetweenRows);
+
+	_display->setTextSize(3);
+	_display->setCursor(5, HeightOnScreen);
+	String ipAddress = wifiExztra.getIPAddress();
+	_display->getTextBounds(ipAddress, 0, 0, &bx, &by, &w1, &h1);
+	if (!ipAddress.isEmpty()) {
+		_display->printf("IP:%s", ipAddress.c_str());
+	}
+	HeightOnScreen += h1 + PixelsBetweenRows;
+
+	_display->setTextSize(2);
+	_display->setCursor(5, HeightOnScreen);
+	String macAddress = wifiExztra.getMACAddress();
+	_display->getTextBounds(macAddress, 0, 0, &bx, &by, &w1, &h1);
+	if (!macAddress.isEmpty()) {
+		_display->printf("MAC:%s", macAddress.c_str());
+	}
+	HeightOnScreen += h1 + PixelsBetweenRows;
+
+	_display->setTextSize(2);
+	_display->getTextBounds(str_wifi_continue, 0, 0, &bx, &by, &w1, &h1);
+	_display->setCursor((SCREEN_WIDTH - w1) / 2, SCREEN_HEIGHT - 120 - (h1 + PixelsBetweenRows));
+	if (millis() - lastStatusChangeTime > 500) { // Blink every 500ms
+		lastStatusChangeTime = millis();
+		blinker = !blinker;
+	}
+	_display->fillRect(0, SCREEN_HEIGHT - 125 - (h1 + PixelsBetweenRows), SCREEN_WIDTH, h1 + (PixelsBetweenRows * 2), blinker ? ST7796_BLACK : ST7796_RED); // Clear previous text
+	_display->print(getProgmemString(str_wifi_continue));
+	_display->drawBitmap((SCREEN_WIDTH / 2) - 72, SCREEN_HEIGHT - 100, wifi_icon_144x100, 144, 100, ST7796_YELLOW);  //  Draw a WiFi icon below the text
+}
+
+/*
+* Display the Wifi status symbol on the lower right part of the screen
+*/
+void ViewManager::wifiStatusSymbol() {
+	static int wifiStatusBuff = -1;
+	if (wifiStatusBuff != wifiExztra.getWiFiStatus()) {
+		wifiStatusBuff = wifiExztra.getWiFiStatus();
+		_display->fillRect((SCREEN_WIDTH - 31), (SCREEN_HEIGHT - 23), 31, 23, ST7796_BLACK);
+	}
+	if (wifiExztra.getWiFiStatus() == WL_CONNECTED)
+		_display->drawBitmap((SCREEN_WIDTH - 30), (SCREEN_HEIGHT - 21), wifi_symbol_30x21, 30, 21, ST7796_YELLOW);  //  Draw a thermometer icon at the end of the temp printout
+	else
+		_display->drawBitmap((SCREEN_WIDTH - 30), (SCREEN_HEIGHT - 22), nowifi_symbol_30x22, 30, 22, ST7796_RED);  //  Draw a thermometer icon at the end of the temp printout
+}
+
+
+#endif
 
 #endif	// DISPLAY_TYPE_ST7796S

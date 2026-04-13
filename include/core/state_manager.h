@@ -24,7 +24,14 @@ enum class ViewID : uint8_t {
 	SENSOR_ERROR = 9,
 	SCREEN_SAVER = 10,
 	SCREEN_OFF = 11,
-	RESET_SCREEN = 12
+#if BLUETOOTH_WIFI_ENABLED
+	BT_SCANNING = 12,
+	BT_CONNECTED = 13,
+	WIFI_SCANNING = 14,
+	WIFI_SELECT = 15,
+	WIFI_CONNECTED = 16,
+#endif
+	RESET_SCREEN = 17
 };
 
 class StateManager {
@@ -98,7 +105,13 @@ public:
 	uint32_t getDryStartTimer() const { return _dryStartTimer; }
 	void setDryStartTimer(uint32_t timer) { _dryStartTimer = timer; }
 
-	uint8_t getScreenTimeout() const { return _ScreenSaverTimeout; } 
+	uint32_t getDryReStartTimer() const { return _dryReStartTimer; }
+	void setDryReStartTimer(uint32_t restartTimer) { _dryReStartTimer = restartTimer; }
+
+	bool isManualTurnedOff() const { return _turnedoff; }
+	void setManualTurnedOff(bool turnedOff) { _turnedoff = turnedOff; }
+
+	uint8_t getScreenTimeout() const { return _ScreenSaverTimeout; }
 	void setScreenTimeout(uint8_t timeout) { _ScreenSaverTimeout = timeout; }
 
 	// Current view
@@ -123,6 +136,7 @@ private:
 	bool _heaterOn = false;
 	bool _fanOn = false;
 	bool _printing = false;
+	bool _turnedoff = true;
 	OperationMode _mode = DRY_MODE_BY_HUM;
 #if GPIO_INTERFACE_ENABLED
 	ControlMode _controlMode = CONTROL_AUTO_TEMP;
@@ -134,6 +148,7 @@ private:
 	uint32_t _dryDuration = 60;  // Default 60 minutes
 	uint32_t _dryStartTime = 0;  // Timestamp when drying started
 	uint32_t _dryStartTimer = 0;
+	uint32_t _dryReStartTimer = 0;
 	uint8_t _ScreenSaverTimeout = 1; // Default 1 minute
 	ViewID _currentView = ViewID::STANDBY;
 	bool _editing = false;

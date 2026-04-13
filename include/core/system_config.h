@@ -64,6 +64,7 @@
 #define MINUTES_TO_MS 60000           // Minutes to milliseconds conversion
 #define MS_TO_SECONDS 1000            // Milliseconds to seconds conversion
 #define SECONDS_PER_HOUR 3600         // Seconds in a hour
+#define MINUTES_PER_HOUR 60
 #define SCREEN_TIMEOUT_MAX 60		 // Maximum screen timeout in minutes (1 hour)
 
 // ===================== Sensor system configuration =====================
@@ -99,6 +100,7 @@
 #define SECURITY_MAX_ADC_VALUE 970           // Maximum valid ADC value
 #define SECURITY_SENSOR_RESET_TIME 1000      // 1 second for automatic recovery
 #define SECURITY_SENSOR_MAX_TEMP_CHANGE 15.0 // Maximum temperature change per reading in sensor
+#define SECURITY_NO_SENSOR 300
 
 // ===================== Intervals for system =====================
 struct SystemIntervals {
@@ -136,13 +138,7 @@ enum ControlMode : uint8_t {
 // Temperature unit: Celsius only
 #define getTemperatureUnit() str_celsius
 
-// ===================== EEPROM configuration =====================
-#define EEPROM_VERSION 1
-#define EEPROM_ADDR_VERSION 0
-#define EEPROM_ADDR_TEMP 1
-#define EEPROM_ADDR_HUM 2
-#define EEPROM_ADDR_MODE 3
-#define EEPROM_ADDR_DRY_DURATION 4
-#define EEPROM_ADDR_DRY_START_TIME 12
+// ===================== Conectivity configuration =====================
+#define MAX_WIFI_NETWORKS 6 // Maximum number of WiFi networks to display
 
 #endif // SYSTEM_CONFIG_H 

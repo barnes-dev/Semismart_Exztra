@@ -5,8 +5,8 @@
 #include <stdint.h>
 
 // Pin definitions for the potentiometers used to simulate the sensors on a breadboard for testing.
-#define MOC_HUM_PIN A3
-#define MOC_TEMP_PIN A6
+//#define MOC_HUM_PIN A3
+//#define MOC_TEMP_PIN A6
 
 class SensorManager {
 public:
@@ -24,13 +24,16 @@ public:
 	// To test the setup on a breadboard using potent	iometers to simulate the temperature and humidity sensors, 
 	// you can use the following code to convert the raw ADC values to temperature and humidity.
 	// Use inputs A0 for humidity and A1 for temperature. 
-	// This assumes a linear relationship where 0-1023 corresponds to 0-5V, and that the sensors output 10mV per degree 
-	// Celsius for temperature and 10mV per %RH for humidity. 
+	// This assumes a linear relationship where 0-1023 corresponds to 0-5V (0-4095 corresponds to 0-3.3V for Arduino Nano ESP32), 
+	// and that the sensors output 10mV per degree Celsius for temperature and 10mV per %RH for humidity. 
 	// Adjust the conversion factors as needed based on your specific sensors.
-
+#if ARDUINO_ESP32
+//	float getTemperature() const { return analogRead(MOC_TEMP_PIN) * (1.0 / 4096.0) * 75.0; }  // Convert raw ADC to temperature (assuming 10mV/°C and 5V reference)
+//	float getHumidity() const { return analogRead(MOC_HUM_PIN) * (1.0 / 4096.0) * 70.0; }  // Convert raw ADC to humidity (assuming 10mV/%RH and 5V reference)
+#else
 //	float getTemperature() const { return analogRead(MOC_TEMP_PIN) * (1.0 / 1024.0) * 75.0; }  // Convert raw ADC to temperature (assuming 10mV/°C and 5V reference)
 //	float getHumidity() const { return analogRead(MOC_HUM_PIN) * (1.0 / 1024.0) * 70.0; }  // Convert raw ADC to humidity (assuming 10mV/%RH and 5V reference)
-
+#endif
 
 	bool isValid() const { return _valid; }
 	bool isSHT4Available() const { return _sht4Available; }

@@ -2,7 +2,7 @@
 #define STRINGS_H
 
 #include <Arduino.h>
-#include <avr/pgmspace.h>
+//#include <avr/pgmspace.h>
 
 #if DISPLAY_TYPE_SSD1306
 #include <Adafruit_SSD1306.h>		 
@@ -85,6 +85,43 @@ static const char PROGMEM str_fan_format[] = "Fan speed";
 static const char PROGMEM str_space[] = " ";
 static const char PROGMEM str_greater[] = " -> ";
 static const char PROGMEM str_percent_sign[] = "%";
+
+#if BLUETOOTH_WIFI_ENABLED
+// Bluetooth and Wifi strings
+static const char PROGMEM str_bluetooth[] = "Bluetooth";
+static const char PROGMEM str_BT_scanning1[] = "Scanning for";
+static const char PROGMEM str_BT_scanning2[] = "Bluetooth devices";
+static const char PROGMEM str_BT_scanning[] = "Scanning Bluetooth";
+static const char PROGMEM str_BT_no_devices[] = "No devices found";
+static const char PROGMEM str_BT_connected_no_name[] = "to your device";
+static const char PROGMEM str_bluetooth_connected[] = "BT Connected";
+static const char PROGMEM str_bluetooth_disconnected[] = "BT Disconnected";
+static const char PROGMEM str_bluetooth_instruction1[] = "Use your connected";
+static const char PROGMEM str_bluetooth_instruction2[] = "BT device to select";
+static const char PROGMEM str_bluetooth_instruction3[] = "the WiFi network.";
+static const char PROGMEM str_bluetooth_instruction4[] = "device to insert the";
+static const char PROGMEM str_bluetooth_instruction5[] = "WiFi password";
+static const char PROGMEM str_bluetooth_instructions[] = "Use BT choose Network";
+static const char PROGMEM str_wifi[] = "WiFi";
+static const char PROGMEM str_wifi_status[] = "WiFi Status:";
+static const char PROGMEM str_wifi_no_networks_1[] =	"No networks found";
+static const char PROGMEM str_wifi_scan_completed_2[] = "Scan completed";
+static const char PROGMEM str_wifi_connected_3[] =		"WiFi Connected";
+static const char PROGMEM str_connection_failed_4[] =	"Connection Failed";
+static const char PROGMEM str_connection_lost_5[] =		"Connection Lost";
+static const char PROGMEM str_wifi_disconnected_6[] =	"WiFi Disconnected";
+static const char PROGMEM str_wifi_list_networks_Nr[] = "Nr";
+static const char PROGMEM str_wifi_list_divider[] = "|";
+static const char PROGMEM str_wifi_list_networks_SSID[] = "SSID:";
+static const char PROGMEM str_ip_address[] = "IP:";
+static const char PROGMEM str_mac_address[] = "MAC: ";
+static const char PROGMEM str_disconnecting[] = "Disconnecting...";
+static const char PROGMEM str_connecting[] = "Connecting";
+static const char PROGMEM str_wifi_connecting[] = "Connecting WiFi";
+static const char PROGMEM str_wifi_continue[] = "Any button = continue";
+static const char PROGMEM str_exit_config1[] = "Exit config with";
+static const char PROGMEM str_exit_config2[] = "lower button";
+#endif
 
 // Helper functions for PROGMEM strings		  
 #if DISPLAY_TYPE_SSD1306

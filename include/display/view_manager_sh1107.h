@@ -11,6 +11,22 @@
 #include <stdint.h>
 #include "../core/state_manager.h"
 #include "../sensors/sensor_manager.h"
+#include "../../include/safety/thermal_security.h"
+#include "../../include/control/control.h"
+#include "../../include/utils/strings.h"
+#include "../../include/control/pid_manager.h"
+#include <Wire.h>
+#include <Adafruit_SH110X.h>
+#include <Fonts/FreeSans9pt7b.h>
+#include "../../include/utils/icons.h"
+#if BLUETOOTH_WIFI_ENABLED
+#include "../../include/connectivity/bluetooth_conn.h"
+#include "../../include/connectivity/wifi_conn.h"
+#endif
+#if LED_MANAGER_ENABLED
+#include "../../include/lights/LEDManager.h"
+extern LEDManager ledManager;
+#endif
 
 class Adafruit_SH1107;
 class ViewManager {
@@ -41,6 +57,14 @@ private:
     void SaveEnterText();
     void EditPartOfSubScreen(const char* label);
     void TimeConfiguration(uint32_t TimeVariable);
+#if BLUETOOTH_WIFI_ENABLED
+    void drawBTScanning();
+    void drawBTConnected();
+    void drawWifiScanning();
+    void drawWifiSelect();
+    void drawWifiConnected();
+    void wifiStatusSymbol();
+#endif
 
 
     Adafruit_SH1107* _display = nullptr;

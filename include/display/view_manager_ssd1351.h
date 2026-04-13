@@ -10,6 +10,7 @@
 #define DC_PIN          A2
 #define SCLK_PIN        2
 #define MOSI_PIN        4
+
 // Color definitions
 #define	BLACK           0x0000
 #define	BLUE            0x001F
@@ -21,9 +22,26 @@
 #define YELLOW          0xFFE0  
 #define WHITE           0xFFFF
 
+
 #include <stdint.h>
 #include "../core/state_manager.h"
 #include "../sensors/sensor_manager.h"
+#include "../../include/safety/thermal_security.h"
+#include "../../include/control/control.h"
+#include "../../include/utils/strings.h"
+#include "../../include/control/pid_manager.h"
+#include <Wire.h>
+#include <Adafruit_SSD1351.h>
+#include <Fonts/FreeSans9pt7b.h>
+#include "../../include/utils/icons.h"
+#if BLUETOOTH_WIFI_ENABLED
+#include "../../include/connectivity/bluetooth_conn.h"
+#include "../../include/connectivity/wifi_conn.h"
+#endif
+#if LED_MANAGER_ENABLED
+#include "../../include/lights/LEDManager.h"
+extern LEDManager ledManager;
+#endif
 
 class Adafruit_SSD1351;
 class ViewManager {
@@ -48,10 +66,18 @@ private:
     void drawHeaterStatus();
     void drawLEDStatus();
     void drawScreenSaverSetting();
-    void ScreenSaverOn();
     void drawPowerOutageMemory();
+    void ScreenSaverOn();
     void StartSubScreens(const char* title);
     void SaveEnterText();
+#if BLUETOOTH_WIFI_ENABLED
+    void drawBTScanning();
+    void drawBTConnected();
+    void drawWifiScanning();
+    void drawWifiSelect();
+    void drawWifiConnected();
+    void wifiStatusSymbol();
+#endif
 
     Adafruit_SSD1351* _display = nullptr;
     ViewID _currentView = ViewID::STANDBY;

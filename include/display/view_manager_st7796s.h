@@ -10,8 +10,8 @@
 #define DC_PIN          A2
 #define SCLK_PIN        2
 #define MOSI_PIN        4
-// Some ready-made 16-bit ('565') color settings:
 
+// Some ready-made 16-bit ('565') color settings:
 #define ST7796_BLACK    0xFFFF
 #define ST7796_WHITE    0x0000
 #define ST7796_YELLOW   0xF800
@@ -26,7 +26,22 @@
 #include <stdint.h>
 #include "../core/state_manager.h"
 #include "../sensors/sensor_manager.h"
-//#include <TFT_eSPI.h>
+#include "../../include/safety/thermal_security.h"
+#include "../../include/control/control.h"
+#include "../../include/utils/strings.h"
+#include "../../include/control/pid_manager.h"
+#include <Adafruit_ST7796S.h>
+//#include <Fonts/FreeSansBold18pt7b.h>  // A custom font
+#include "../../include/utils/icons.h"
+#include <cstring>
+#if BLUETOOTH_WIFI_ENABLED
+#include "../../include/connectivity/bluetooth_conn.h"
+#include "../../include/connectivity/wifi_conn.h"
+#endif
+#if LED_MANAGER_ENABLED
+#include "../../include/lights/LEDManager.h"
+extern LEDManager ledManager;
+#endif
 
 class Adafruit_ST7796S;
 class ViewManager {
@@ -56,6 +71,14 @@ private:
     void StartSubScreens(const char* title, uint8_t textSize);
     void SecondTitleRow(const char* secondTitle);
     void SaveEnterText();
+#if BLUETOOTH_WIFI_ENABLED
+    void drawBTScanning();
+	void drawBTConnected();
+	void drawWifiScanning();
+	void drawWifiSelect();
+	void drawWifiConnected();
+    void wifiStatusSymbol();
+#endif
 
    Adafruit_ST7796S* _display = nullptr;
    ViewID _currentView = ViewID::STANDBY;
