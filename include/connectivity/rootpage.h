@@ -71,34 +71,35 @@ input[type='range'] {
     background:transparent;
 }
 
+/* Track styling */
 input[type='range']::-webkit-slider-runnable-track {
     height:12px;
     background:#ddd;
     border-radius:6px;
 }
-
 input[type='range']::-moz-range-track {
     height:12px;
     background:#ddd;
     border-radius:6px;
 }
 
+/* Thumb styling uses CSS variable --thumb-color so JS only needs to set that variable on the input element.
+   This avoids creating many <style> elements at runtime (smaller footprint, fewer DOM ops). */
 input[type='range']::-webkit-slider-thumb {
     -webkit-appearance:none;
     width:60px;
     height:60px;
     margin-top:-25px;
     border-radius:50%;
-    background:#ff4d4d;
+    background:var(--thumb-color, #ff4d4d) !important;
     box-shadow:4px 4px 6px rgba(0,0,0,0.22);
     cursor:pointer;
 }
-
 input[type='range']::-moz-range-thumb {
     width:60px;
     height:60px;
     border-radius:50%;
-    background:#ff4d4d;
+    background:var(--thumb-color, #ff4d4d) !important;
     box-shadow:4px 4px 6px rgba(0,0,0,0.22);
     cursor:pointer;
 }
@@ -447,12 +448,14 @@ input[type='range']::-moz-range-thumb {
 <script>
 (function() {
 
+    // small helper - converts minutes to "HHh MMm"
     function minutesToHHMM(mins) {
         const h = Math.floor(mins / 60);
         const m = mins % 60;
         return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
     }
 
+    // cache DOM nodes
     var slider           = document.getElementById('powerSlider');
     var indicator        = document.getElementById('powerIndicator');
     var status           = document.getElementById('powerStatus');
@@ -475,7 +478,6 @@ input[type='range']::-moz-range-thumb {
     var targetHumValue   = document.getElementById("targetHumValue");
     var dryTimerSlider   = document.getElementById("dryTimerSlider");
     var dryTimerValue    = document.getElementById("dryTimerValue");
-    var idleTimerSlider  = document.getElementById("idleTimerSlider");
     var idleTimerValue   = document.getElementById("idleTimerValue");
     var screenSaverSlider = document.getElementById("screenSaverSlider");
     var screenSaverValue  = document.getElementById("screenSaverValue");
@@ -489,6 +491,7 @@ input[type='range']::-moz-range-thumb {
     var sensorModeLabel  = document.getElementById("sensorModeLabel");
     var powerLossToggle = document.getElementById("powerLossToggle");
     var powerLossLabel  = document.getElementById("powerLossLabel");
+    var sensorModeSwitch = document.getElementById("sensorModeSwitch");
 
     var idleHoursSlider   = document.getElementById("idleHoursSlider");
     var idleHoursValue    = document.getElementById("idleHoursValue");
@@ -497,20 +500,22 @@ input[type='range']::-moz-range-thumb {
 
     var controlModeJustChanged = false;
 
-    function lerpColor(color1, color2, t) {
-        return `rgb(${Math.round(color1[0] + (color2[0] - color1[0]) * t)},
-                    ${Math.round(color1[1] + (color2[1] - color1[1]) * t)},
-                    ${Math.round(color1[2] + (color2[2] - color1[2]) * t)})`;
+    // simple, fast color interpolation - returns "rgb(r,g,b)"
+    function lerpColor(c1, c2, t) {
+        return 'rgb(' +
+            Math.round(c1[0] + (c2[0] - c1[0]) * t) + ',' +
+            Math.round(c1[1] + (c2[1] - c1[1]) * t) + ',' +
+            Math.round(c1[2] + (c2[2] - c1[2]) * t) + ')';
     }
 
     function tempToColor(v, min, max) {
-        const t = (v - min) / (max - min);
-        return lerpColor([0, 128, 255], [255, 0, 0], t);
+        const t = (v - min) / (max - min || 1);
+        return lerpColor([0,128,255], [255,0,0], t);
     }
 
     function humToColor(v, min, max) {
-        const t = (v - min) / (max - min);
-        return lerpColor([0, 200, 0], [0, 120, 255], t);
+        const t = (v - min) / (max - min || 1);
+        return lerpColor([0,200,0], [0,120,255], t);
     }
 
     function computeIdleMinutes() {
@@ -518,42 +523,16 @@ input[type='range']::-moz-range-thumb {
                parseInt(idleMinutesSlider.value, 10);
     }
 
-    function setSliderThumbColor(slider, color) {
-        if (!slider) return;
-
-        slider.style.setProperty('--thumb-color', color);
-
-        let id = slider.id + "_thumb_style";
-        let style = document.getElementById(id);
-
-        if (!style) {
-            style = document.createElement('style');
-            style.id = id;
-            document.head.appendChild(style);
-        }
-
-        style.textContent =
-            `#${slider.id}::-webkit-slider-thumb { background: ${color} !important; }
-             #${slider.id}::-moz-range-thumb { background: ${color} !important; }`;
+    // Set per-input CSS variable --thumb-color to avoid creating <style> tags at runtime
+    function setThumbColor(sl, color) {
+        if (!sl) return;
+        try { sl.style.setProperty('--thumb-color', color); } catch (e) {}
     }
 
     function stateInfo(v) {
         if (v === 0) return { text:'OFF',     color:'#ff4d4d', param:'off' };
         if (v === 1) return { text:'CYCLING', color:'#4caf50', param:'cycling' };
         return          { text:'ACTIVE',  color:'#4d79ff', param:'on' };
-    }
-
-    function applyThumbColor(color) {
-        var id='thumbColorStyle';
-        var style=document.getElementById(id);
-        if (!style) {
-            style=document.createElement('style');
-            style.id=id;
-            document.head.appendChild(style);
-        }
-        style.textContent =
-            "input[type='range']::-webkit-slider-thumb{background:"+color+" !important;}" +
-            "input[type='range']::-moz-range-thumb{background:"+color+" !important;}";
     }
 
     function computeControlMode() {
@@ -568,36 +547,23 @@ input[type='range']::-moz-range-thumb {
 
     function sendControlMode() {
         const mode = computeControlMode();
-
         controlModeJustChanged = true;
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/setcontrolmode?value=" + encodeURIComponent(mode), true);
-        xhr.send();
-
-        setTimeout(() => controlModeJustChanged = false, 1500);
+        fetch("/setcontrolmode?value=" + encodeURIComponent(mode)).catch(()=>{});
+        setTimeout(function(){ controlModeJustChanged = false; }, 1500);
     }
 
-	function minutesToHHMM(mins) {
-		const h = Math.floor(mins / 60);
-		const m = mins % 60;
-		return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
-	}
-    
     function updateUI() {
-        var v=parseInt(slider.value,10);
-        var info=stateInfo(v);
-        status.textContent=info.text;
-        indicator.style.background=info.color;
-        applyThumbColor(info.color);
-        slider.style.background=(v===1)?'#e8f7e8':(v===2?'#e8f0ff':'#fff0f0');
+        var v = parseInt(slider.value,10);
+        var info = stateInfo(v);
+        status.textContent = info.text;
+        indicator.style.background = info.color;
+        setThumbColor(slider, info.color);
+        slider.style.background = (v===1)?'#e8f7e8':(v===2?'#e8f0ff':'#fff0f0');
     }
 
     function sendState(v) {
-        var info=stateInfo(v);
-        var xhr=new XMLHttpRequest();
-        xhr.open('GET','/setpower?state='+encodeURIComponent(info.param),true);
-        xhr.send();
+        var info = stateInfo(v);
+        fetch('/setpower?state=' + encodeURIComponent(info.param)).catch(()=>{});
     }
 
     slider.addEventListener('input', updateUI);
@@ -609,9 +575,7 @@ input[type='range']::-moz-range-thumb {
         const max = parseInt(targetTempSlider.max, 10);
 
         targetTempValue.textContent = v + "°C";
-
-        const color = tempToColor(v, min, max);
-        setSliderThumbColor(targetTempSlider, color);
+        setThumbColor(targetTempSlider, tempToColor(v, min, max));
     });
 
     targetHumSlider.addEventListener("input", function () {
@@ -620,23 +584,17 @@ input[type='range']::-moz-range-thumb {
         const max = parseInt(targetHumSlider.max, 10);
 
         targetHumValue.textContent = v + "%";
-
-        const color = humToColor(v, min, max);
-        setSliderThumbColor(targetHumSlider, color);
+        setThumbColor(targetHumSlider, humToColor(v, min, max));
     });
 
     targetTempSlider.addEventListener("change", function () {
         var v = parseInt(targetTempSlider.value, 10);
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/settargettemp?value=" + encodeURIComponent(v), true);
-        xhr.send();
+        fetch("/settargettemp?value=" + encodeURIComponent(v)).catch(()=>{});
     });
 
     targetHumSlider.addEventListener("change", function () {
         var v = parseInt(targetHumSlider.value, 10);
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/settargethumidity?value=" + encodeURIComponent(v), true);
-        xhr.send();
+        fetch("/settargethumidity?value=" + encodeURIComponent(v)).catch(()=>{});
     });
 
 	dryTimerSlider.addEventListener("input", function () {
@@ -646,21 +604,13 @@ input[type='range']::-moz-range-thumb {
 
     dryTimerSlider.addEventListener("change", function () {
         const v = parseInt(dryTimerSlider.value, 10);
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/setdryduration?value=" + encodeURIComponent(v), true);
-        xhr.send();
-
-        setSliderThumbColor(dryTimerSlider, "#4da6ff");
+        fetch("/setdryduration?value=" + encodeURIComponent(v)).catch(()=>{});
+        setThumbColor(dryTimerSlider, "#4da6ff");
     });
 
     idleHoursSlider.addEventListener("input", function () {
         const h = parseInt(idleHoursSlider.value, 10);
-		if (h === 1) {
-        idleHoursValue.textContent = h + " hour";
-		} else {
-        idleHoursValue.textContent = h + " hours";
-		}
+        idleHoursValue.textContent = h === 1 ? h + " hour" : h + " hours";
 
         const total = computeIdleMinutes();
         idleTimerValue.textContent = total === 0 ? 
@@ -669,12 +619,8 @@ input[type='range']::-moz-range-thumb {
 
     idleMinutesSlider.addEventListener("input", function () {
         const m = parseInt(idleMinutesSlider.value, 10);
-		if (m === 1) {
-        idleMinutesValue.textContent = m + " minute";
-		} else {
-        idleMinutesValue.textContent = m + " minutes";
-		}
-		
+        idleMinutesValue.textContent = m === 1 ? m + " minute" : m + " minutes";
+
         const total = computeIdleMinutes();
         idleTimerValue.textContent = total === 0 ? 
             "No repetition of the cycles" : minutesToHHMM(total);
@@ -682,10 +628,7 @@ input[type='range']::-moz-range-thumb {
 
     function sendIdleTimer() {
         const total = computeIdleMinutes();
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/setidlestart?value=" + encodeURIComponent(total), true);
-        xhr.send();
+        fetch("/setidlestart?value=" + encodeURIComponent(total)).catch(()=>{});
     }
 
     idleHoursSlider.addEventListener("change", sendIdleTimer);
@@ -699,15 +642,12 @@ input[type='range']::-moz-range-thumb {
         else
             screenSaverValue.textContent = v + " min";
 
-        setSliderThumbColor(screenSaverSlider, "#4da6ff");
+        setThumbColor(screenSaverSlider, "#4da6ff");
     });
 
     screenSaverSlider.addEventListener("change", function () {
         const v = parseInt(screenSaverSlider.value, 10);
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/setscreensaver?value=" + encodeURIComponent(v), true);
-        xhr.send();
+        fetch("/setscreensaver?value=" + encodeURIComponent(v)).catch(()=>{});
     });
 
     powerLossToggle.addEventListener("change", function () {
@@ -718,9 +658,7 @@ input[type='range']::-moz-range-thumb {
             ? "Remember last state after power loss"
             : "Power off after power loss";
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/setpowerlossmemory?value=" + encodeURIComponent(v), true);
-        xhr.send();
+        fetch("/setpowerlossmemory?value=" + encodeURIComponent(v)).catch(()=>{});
     });
 
     modeToggle.addEventListener("change", function () {
@@ -731,12 +669,8 @@ input[type='range']::-moz-range-thumb {
             : "Drymode from Humidity";
 
         modeJustChanged = true;
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/setmode?value=" + encodeURIComponent(v), true);
-        xhr.send();
-
-        setTimeout(() => modeJustChanged = false, 1500);
+        fetch("/setmode?value=" + encodeURIComponent(v)).catch(()=>{});
+        setTimeout(function(){ modeJustChanged = false; }, 1500);
     });
 
     useModeToggle.addEventListener("change", function () {
@@ -749,230 +683,226 @@ input[type='range']::-moz-range-thumb {
 
         sensorModeLabel.textContent = isTemp ? "Temperature" : "Humidity";
 
-        const sw = document.getElementById("sensorModeSwitch");
-        sw.classList.toggle("sensor-temp", isTemp);
-        sw.classList.toggle("sensor-hum", !isTemp);
+        sensorModeSwitch.classList.toggle("sensor-temp", isTemp);
+        sensorModeSwitch.classList.toggle("sensor-hum", !isTemp);
 
         sendControlMode();
     });
 
+    // Poll sensors using fetch + json to reduce XHR boilerplate
     function fetchSensors() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET','/sensors',true);
-        xhr.onreadystatechange=function() {
-            if (xhr.readyState===4 && xhr.status===200) {
-                try {
-                    var o = JSON.parse(xhr.responseText);
+        fetch('/sensors').then(function(resp){
+            if (!resp.ok) throw new Error('network');
+            return resp.json();
+        }).then(function(o){
+            try {
+                if (o.temp !== undefined) tempEl.textContent = parseFloat(o.temp).toFixed(2);
+                if (o.hum  !== undefined) humEl.textContent  = parseFloat(o.hum).toFixed(2);
 
-                    if (o.temp !== undefined) tempEl.textContent = parseFloat(o.temp).toFixed(2);
-                    if (o.hum  !== undefined) humEl.textContent  = parseFloat(o.hum).toFixed(2);
+                if (o.heatPower !== undefined) {
+                    const hp = parseInt(o.heatPower,10);
+                    heatPowerEl.textContent = (hp>0)? hp+'%' : 'Heater is Off';
+                }
 
-                    if (o.heatPower !== undefined) {
-                        const hp=parseInt(o.heatPower,10);
-                        heatPowerEl.textContent = (hp>0)? hp+'%' : 'Heater is Off';
+                if (o.fanSpeed !== undefined) {
+                    const fs = parseInt(o.fanSpeed,10);
+                    const hp = parseInt(o.heatPower,10);
+                    fanSpeedEl.textContent =
+                        (hp===0 && fs>0) ? 'Cooling' :
+                        (fs>0) ? fs+'%' : 'Fans Off';
+                }
+
+                if (o.oprMode !== undefined) {
+                    const opm = parseInt(o.oprMode, 10);
+                    const apm = parseInt(o.autoPrintMode, 10);
+                    const ctrlm = parseInt(o.ctrlMode, 10);
+
+                    if (!modeJustChanged) {
+                        modeToggle.checked = (opm === 1);
+                        modeToggleLabel.textContent = (opm === 1)
+                            ? "Drying on Timer"
+                            : "Drymode from Humidity";
                     }
 
-                    if (o.fanSpeed !== undefined) {
-                        const fs=parseInt(o.fanSpeed,10);
-                        const hp=parseInt(o.heatPower,10);
-                        fanSpeedEl.textContent =
-                            (hp===0 && fs>0) ? 'Cooling' :
-                            (fs>0) ? fs+'%' : 'Fans Off';
-                    }
+                    if (opm===0 && apm===0) oprModeEl.textContent='Drymode from Humidity';
+                    else if (opm===1 && apm===0) oprModeEl.textContent='Drying on Timer';
+                    else if (apm===1 && (ctrlm===1 || ctrlm===3)) oprModeEl.textContent='Printing';
 
-                    if (o.oprMode !== undefined) {
-                        const opm = parseInt(o.oprMode, 10);
-                        const apm = parseInt(o.autoPrintMode, 10);
-                        const ctrlm = parseInt(o.ctrlMode, 10);
+                    if (apm===1 && (ctrlm===1 || ctrlm===3))
+                        status.textContent="PRINTING";
+                    else
+                        updateUI();
+                }
 
-                        if (!modeJustChanged) {
-                            modeToggle.checked = (opm === 1);
-                            modeToggleLabel.textContent = (opm === 1)
-                                ? "Drying on Timer"
-                                : "Drymode from Humidity";
+                if (o.ctrlMode !== undefined) {
+                    const ctrlm = parseInt(o.ctrlMode, 10);
+
+                    if (!controlModeJustChanged) {
+                        if (ctrlm === 0) { // CONTROL_USER_TEMP
+                            useModeToggle.checked = false;
+                            sensorModeToggle.checked = true;
+                            useModeLabel.textContent = "User";
+                            sensorModeLabel.textContent = "Temperature";
                         }
-
-                        if (opm===0 && apm===0) oprModeEl.textContent='Drymode from Humidity';
-                        else if (opm===1 && apm===0) oprModeEl.textContent='Drying on Timer';
-                        else if (apm===1 && (ctrlm===1 || ctrlm===3)) oprModeEl.textContent='Printing';
-
-                        if (apm===1 && (ctrlm===1 || ctrlm===3))
-                            status.textContent="PRINTING";
-                        else
-                            updateUI();
-                    }
-
-                    if (o.ctrlMode !== undefined) {
-                        const ctrlm = parseInt(o.ctrlMode, 10);
-
-                        if (!controlModeJustChanged) {
-                            if (ctrlm === 0) { // CONTROL_USER_TEMP
-                                useModeToggle.checked = false;
-                                sensorModeToggle.checked = true;
-                                useModeLabel.textContent = "User";
-                                sensorModeLabel.textContent = "Temperature";
-                            }
-                            else if (ctrlm === 1) { // CONTROL_AUTO_TEMP
-                                useModeToggle.checked = true;
-                                sensorModeToggle.checked = true;
-                                useModeLabel.textContent = "Auto";
-                                sensorModeLabel.textContent = "Temperature";
-                            }
-                            else if (ctrlm === 2) { // CONTROL_USER_HUM
-                                useModeToggle.checked = false;
-                                sensorModeToggle.checked = false;
-                                useModeLabel.textContent = "User";
-                                sensorModeLabel.textContent = "Humidity";
-                            }
-                            else if (ctrlm === 3) { // CONTROL_AUTO_HUM
-                                useModeToggle.checked = true;
-                                sensorModeToggle.checked = false;
-                                useModeLabel.textContent = "Auto";
-                                sensorModeLabel.textContent = "Humidity";
-                            }
+                        else if (ctrlm === 1) { // CONTROL_AUTO_TEMP
+                            useModeToggle.checked = true;
+                            sensorModeToggle.checked = true;
+                            useModeLabel.textContent = "Auto";
+                            sensorModeLabel.textContent = "Temperature";
                         }
-
-                        ctrlModeEl.textContent =
-                            (ctrlm === 0) ? "User Mode Temperature" :
-                            (ctrlm === 1) ? "Auto Mode Temperature" :
-                            (ctrlm === 2) ? "User Mode Humidity" :
-                                            "Auto Mode Humidity";
-
-                        if (ctrlm===1 || ctrlm===3) {
-                            slider.max = 1;
-                            if (parseInt(slider.value,10)===2) {
-                                slider.value=1;
-                                updateUI();
-                            }
-                        } else {
-                            slider.max = 2;
+                        else if (ctrlm === 2) { // CONTROL_USER_HUM
+                            useModeToggle.checked = false;
+                            sensorModeToggle.checked = false;
+                            useModeLabel.textContent = "User";
+                            sensorModeLabel.textContent = "Humidity";
+                        }
+                        else if (ctrlm === 3) { // CONTROL_AUTO_HUM
+                            useModeToggle.checked = true;
+                            sensorModeToggle.checked = false;
+                            useModeLabel.textContent = "Auto";
+                            sensorModeLabel.textContent = "Humidity";
                         }
                     }
 
-                    if (o.ETAhours !== undefined) {
-                        const ETAH=parseInt(o.ETAhours,10);
-                        const ETAM=parseInt(o.ETAminutes,10);
-                        const ETAS=parseInt(o.ETAseconds,10);
+                    ctrlModeEl.textContent =
+                        (ctrlm === 0) ? "User Mode Temperature" :
+                        (ctrlm === 1) ? "Auto Mode Temperature" :
+                        (ctrlm === 2) ? "User Mode Humidity" :
+                                        "Auto Mode Humidity";
 
-                        etaTimeValue.textContent =
-                            `${String(ETAH).padStart(2,'0')}:${String(ETAM).padStart(2,'0')}:${String(ETAS).padStart(2,'0')}`;
-
-                        const shouldShowETA =
-                            parseInt(o.oprMode,10)===1 &&
-                            parseInt(o.autoPrintMode,10)===0 &&
-                            parseInt(slider.value,10)===2;
-
-                        etaTimeRow.style.display = shouldShowETA ? "flex" : "none";
-                        etaDivider.style.display = shouldShowETA ? "block" : "none";
-                    }
-
-                    if (o.targetTemp !== undefined) {
-                        const tt=parseInt(o.targetTemp,10);
-
-                        if (o.tempMin !== undefined) targetTempSlider.min = parseInt(o.tempMin,10);
-                        if (o.tempMax !== undefined) targetTempSlider.max = parseInt(o.tempMax,10);
-
-                        targetTempSlider.value = tt;
-                        targetTempValue.textContent = tt + "°C";
-                        setSliderThumbColor(targetTempSlider, tempToColor(tt, targetTempSlider.min, targetTempSlider.max));
-                    }
-
-                    if (o.targetHumidity !== undefined) {
-                        const th=parseInt(o.targetHumidity,10);
-
-                        if (o.humMin !== undefined) targetHumSlider.min = parseInt(o.humMin,10);
-                        if (o.humMax !== undefined) targetHumSlider.max = parseInt(o.humMax,10);
-
-                        targetHumSlider.value = th;
-                        targetHumValue.textContent = th + "%";
-                        setSliderThumbColor(targetHumSlider, humToColor(th, targetHumSlider.min, targetHumSlider.max));
-                    }
-
-                    if (o.idleStartTimer !== undefined) {
-                        const ist = parseInt(o.idleStartTimer, 10);
-                        const h = Math.floor(ist / 60);
-                        const m = ist % 60;
-
-                        idleHoursSlider.value = h;
-                        idleMinutesSlider.value = m;
-
-                        if (h === 1) {
-                            idleHoursValue.textContent = h + " hour";
-                        } else {
-                            idleHoursValue.textContent = h + " hours";
-                        }
-                        if (m === 1) {
-                            idleMinutesValue.textContent = m + " minute";
-                        } else {
-                            idleMinutesValue.textContent = m + " minutes";
-                        }
-
-                        idleTimerValue.textContent =
-                            ist === 0
-                            ? "No repetition of the cycles"
-                            : minutesToHHMM(ist);
-
-                        setSliderThumbColor(idleHoursSlider, "#4da6ff");
-                        setSliderThumbColor(idleMinutesSlider, "#4da6ff");
-                    }
-
-                    if (o.screenSaverStartTime !== undefined) {
-                        const st = parseInt(o.screenSaverStartTime, 10);
-
-                        screenSaverSlider.value = st;
-
-                        if (st === 0)
-                            screenSaverValue.textContent = "Screen saver is disabled";
-                        else
-                            screenSaverValue.textContent = st + " min";
-
-                        setSliderThumbColor(screenSaverSlider, "#4da6ff");
-                    }
-
-                    if (o.powerOutageMemoryMode !== undefined) {
-                        const pm = parseInt(o.powerOutageMemoryMode, 10);
-
-                        powerLossToggle.checked = (pm === 1);
-
-                        powerLossLabel.textContent =
-                            (pm === 1)
-                            ? "Remember last state after power loss"
-                            : "Power off after power loss";
-                    }
-
-
-                    if (o.startHours !== undefined) {
-                        const SH=parseInt(o.startHours,10);
-                        const SM=parseInt(o.startMinutes,10);
-                        const SS=parseInt(o.startSeconds,10);
-                        const mto=parseInt(o.manualTurnOff,10);
-
-                        startTimeValue.textContent =
-                            `${String(SH).padStart(2,'0')}:${String(SM).padStart(2,'0')}:${String(SS).padStart(2,'0')}`;
-
-                        const shouldShowSTART =
-                            parseInt(o.oprMode,10)===1 &&
-                            parseInt(o.autoPrintMode,10)===0 &&
-                            mto===0 &&
-                            parseInt(slider.value,10)===0;
-
-                        startTimeRow.style.display = shouldShowSTART ? "flex" : "none";
-                        startDivider.style.display = shouldShowSTART ? "block" : "none";
-                    }
-
-                    if (o.state !== undefined) {
-                        var v=parseInt(o.state,10);
-                        if (parseInt(slider.max,10)===1 && v===2) v=1;
-                        if (slider.value != v) {
-                            slider.value=v;
+                    if (ctrlm===1 || ctrlm===3) {
+                        slider.max = 1;
+                        if (parseInt(slider.value,10)===2) {
+                            slider.value=1;
                             updateUI();
                         }
+                    } else {
+                        slider.max = 2;
                     }
+                }
 
-                } catch(e){}
-            }
-        };
-        xhr.send();
+                if (o.ETAhours !== undefined) {
+                    const ETAH=parseInt(o.ETAhours,10);
+                    const ETAM=parseInt(o.ETAminutes,10);
+                    const ETAS=parseInt(o.ETAseconds,10);
+
+                    etaTimeValue.textContent =
+                        `${String(ETAH).padStart(2,'0')}:${String(ETAM).padStart(2,'0')}:${String(ETAS).padStart(2,'0')}`;
+
+                    const shouldShowETA =
+                        parseInt(o.oprMode,10)===1 &&
+                        parseInt(o.autoPrintMode,10)===0 &&
+                        parseInt(slider.value,10)===2;
+
+                    etaTimeRow.style.display = shouldShowETA ? "flex" : "none";
+                    etaDivider.style.display = shouldShowETA ? "block" : "none";
+                }
+
+                if (o.dryTimerDuration !== undefined) {
+                    const dd = parseInt(o.dryTimerDuration, 10);
+                    if (!isNaN(dd)) {
+                        dryTimerSlider.value = dd;
+                        dryTimerValue.textContent = minutesToHHMM(dd);
+                        setThumbColor(dryTimerSlider, "#4da6ff");
+                    }
+                }
+
+                if (o.targetTemp !== undefined) {
+                    const tt=parseInt(o.targetTemp,10);
+
+                    if (o.tempMin !== undefined) targetTempSlider.min = parseInt(o.tempMin,10);
+                    if (o.tempMax !== undefined) targetTempSlider.max = parseInt(o.tempMax,10);
+
+                    targetTempSlider.value = tt;
+                    targetTempValue.textContent = tt + "°C";
+                    setThumbColor(targetTempSlider, tempToColor(tt, targetTempSlider.min, targetTempSlider.max));
+                }
+
+                if (o.targetHumidity !== undefined) {
+                    const th=parseInt(o.targetHumidity,10);
+
+                    if (o.humMin !== undefined) targetHumSlider.min = parseInt(o.humMin,10);
+                    if (o.humMax !== undefined) targetHumSlider.max = parseInt(o.humMax,10);
+
+                    targetHumSlider.value = th;
+                    targetHumValue.textContent = th + "%";
+                    setThumbColor(targetHumSlider, humToColor(th, targetHumSlider.min, targetHumSlider.max));
+                }
+
+                if (o.idleStartTimer !== undefined) {
+                    const ist = parseInt(o.idleStartTimer, 10);
+                    const h = Math.floor(ist / 60);
+                    const m = ist % 60;
+
+                    idleHoursSlider.value = h;
+                    idleMinutesSlider.value = m;
+
+                    idleHoursValue.textContent = h === 1 ? h + " hour" : h + " hours";
+                    idleMinutesValue.textContent = m === 1 ? m + " minute" : m + " minutes";
+
+                    idleTimerValue.textContent =
+                        ist === 0
+                        ? "No repetition of the cycles"
+                        : minutesToHHMM(ist);
+
+                    setThumbColor(idleHoursSlider, "#4da6ff");
+                    setThumbColor(idleMinutesSlider, "#4da6ff");
+                }
+
+                if (o.screenSaverStartTime !== undefined) {
+                    const st = parseInt(o.screenSaverStartTime, 10);
+
+                    screenSaverSlider.value = st;
+
+                    if (st === 0)
+                        screenSaverValue.textContent = "Screen saver is disabled";
+                    else
+                        screenSaverValue.textContent = st + " min";
+
+                    setThumbColor(screenSaverSlider, "#4da6ff");
+                }
+
+                if (o.powerOutageMemoryMode !== undefined) {
+                    const pm = parseInt(o.powerOutageMemoryMode, 10);
+
+                    powerLossToggle.checked = (pm === 1);
+
+                    powerLossLabel.textContent =
+                        (pm === 1)
+                        ? "Remember last state after power loss"
+                        : "Power off after power loss";
+                }
+
+                if (o.startHours !== undefined) {
+                    const SH=parseInt(o.startHours,10);
+                    const SM=parseInt(o.startMinutes,10);
+                    const SS=parseInt(o.startSeconds,10);
+                    const mto=parseInt(o.manualTurnOff,10);
+
+                    startTimeValue.textContent =
+                        `${String(SH).padStart(2,'0')}:${String(SM).padStart(2,'0')}:${String(SS).padStart(2,'0')}`;
+
+                    const shouldShowSTART =
+                        parseInt(o.oprMode,10)===1 &&
+                        parseInt(o.autoPrintMode,10)===0 &&
+                        mto===0 &&
+                        parseInt(slider.value,10)===0;
+
+                    startTimeRow.style.display = shouldShowSTART ? "flex" : "none";
+                    startDivider.style.display = shouldShowSTART ? "block" : "none";
+                }
+
+                if (o.state !== undefined) {
+                    var v=parseInt(o.state,10);
+                    if (parseInt(slider.max,10)===1 && v===2) v=1;
+                    if (slider.value != v) {
+                        slider.value=v;
+                        updateUI();
+                    }
+                }
+
+            } catch(e){}
+        }).catch(function(){ /* ignore transient errors */ });
     }
 
     updateUI();

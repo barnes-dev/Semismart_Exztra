@@ -111,7 +111,9 @@ bool manualTurnoffHandled = true;
 
 void setup() {
 	Wire.begin();
-//	Serial.begin(115200);
+# if BREADBOARD
+	Serial.begin(115200);
+#endif
 
 #if LED_MANAGER_ENABLED
 	// Add LEDs ***************************************************************
@@ -136,7 +138,11 @@ void setup() {
 
 	// /*Comment out this section if you want to test in a breadboard
 	extern bool sht4Available;
+#if BREADBOARD
+	if (sht4Available) {
+#else
 	if (!sht4Available) {
+#endif
 		pinMode(LED_BUILTIN, OUTPUT);
 		pinMode(LEDR, OUTPUT);
 		pinMode(LEDB, OUTPUT);

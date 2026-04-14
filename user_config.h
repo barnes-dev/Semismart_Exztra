@@ -70,6 +70,12 @@
 #define GPIO_INTERFACE_ENABLED 1
 // ==============================================================================
 
+// ===================== Breadboard usage =====================
+// Set this setting to 1 of you want to use the Arduino on a 
+// breadboard to test out functionality or do own coding.
+#define BREADBOARD 0
+// ==============================================================================
+
 // ===================== Unit configuration =====================
 // Temperature unit: Celsius only
 

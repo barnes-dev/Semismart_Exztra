@@ -4,23 +4,18 @@
 #include <Arduino.h>
 #include <stdint.h>
 
+#if BREADBOARD	
 // Pin definitions for the potentiometers used to simulate the sensors on a breadboard for testing.
-//#define MOC_HUM_PIN A3
-//#define MOC_TEMP_PIN A6
+#define MOC_HUM_PIN A3
+#define MOC_TEMP_PIN A6
+#endif
 
 class SensorManager {
 public:
 	void begin();
 	void update();
 
-	// Comment out the following two line to use potentiomenters on a breadboard for testing.
-	// This will allow you to simulate the temperature and humidity sensors by turning the potentiometers, 
-	// which will change the raw ADC values read by analogRead() and thus change the calculated temperature 
-	// and humidity values returned by these functions.
-	
-	float getTemperature() const { return _temperature; }
-	float getHumidity() const { return _humidity; }
-
+#if BREADBOARD	
 	// To test the setup on a breadboard using potent	iometers to simulate the temperature and humidity sensors, 
 	// you can use the following code to convert the raw ADC values to temperature and humidity.
 	// Use inputs A0 for humidity and A1 for temperature. 
@@ -28,11 +23,19 @@ public:
 	// and that the sensors output 10mV per degree Celsius for temperature and 10mV per %RH for humidity. 
 	// Adjust the conversion factors as needed based on your specific sensors.
 #if ARDUINO_ESP32
-//	float getTemperature() const { return analogRead(MOC_TEMP_PIN) * (1.0 / 4096.0) * 75.0; }  // Convert raw ADC to temperature (assuming 10mV/°C and 5V reference)
-//	float getHumidity() const { return analogRead(MOC_HUM_PIN) * (1.0 / 4096.0) * 70.0; }  // Convert raw ADC to humidity (assuming 10mV/%RH and 5V reference)
+	float getTemperature() const { return analogRead(MOC_TEMP_PIN) * (1.0 / 4096.0) * 75.0; }  // Convert raw ADC to temperature (assuming 10mV/°C and 5V reference)
+	float getHumidity() const { return analogRead(MOC_HUM_PIN) * (1.0 / 4096.0) * 70.0; }  // Convert raw ADC to humidity (assuming 10mV/%RH and 5V reference)
 #else
-//	float getTemperature() const { return analogRead(MOC_TEMP_PIN) * (1.0 / 1024.0) * 75.0; }  // Convert raw ADC to temperature (assuming 10mV/°C and 5V reference)
-//	float getHumidity() const { return analogRead(MOC_HUM_PIN) * (1.0 / 1024.0) * 70.0; }  // Convert raw ADC to humidity (assuming 10mV/%RH and 5V reference)
+	float getTemperature() const { return analogRead(MOC_TEMP_PIN) * (1.0 / 1024.0) * 75.0; }  // Convert raw ADC to temperature (assuming 10mV/°C and 5V reference)
+	float getHumidity() const { return analogRead(MOC_HUM_PIN) * (1.0 / 1024.0) * 70.0; }  // Convert raw ADC to humidity (assuming 10mV/%RH and 5V reference)
+#endif
+	// Comment out the following two line to use potentiomenters on a breadboard for testing.
+	// This will allow you to simulate the temperature and humidity sensors by turning the potentiometers, 
+	// which will change the raw ADC values read by analogRead() and thus change the calculated temperature 
+	// and humidity values returned by these functions.
+#else
+	float getTemperature() const { return _temperature; }
+	float getHumidity() const { return _humidity; }
 #endif
 
 	bool isValid() const { return _valid; }
