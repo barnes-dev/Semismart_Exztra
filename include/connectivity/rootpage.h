@@ -519,6 +519,8 @@ input[type='range']::-moz-range-thumb {
     }
 
     function setSliderThumbColor(slider, color) {
+        if (!slider) return;
+
         slider.style.setProperty('--thumb-color', color);
 
         let id = slider.id + "_thumb_style";
@@ -910,7 +912,8 @@ input[type='range']::-moz-range-thumb {
                             ? "No repetition of the cycles"
                             : minutesToHHMM(ist);
 
-                        setSliderThumbColor(idleTimerSlider, "#4da6ff");
+                        setSliderThumbColor(idleHoursSlider, "#4da6ff");
+                        setSliderThumbColor(idleMinutesSlider, "#4da6ff");
                     }
 
                     if (o.screenSaverStartTime !== undefined) {
