@@ -465,19 +465,16 @@ input[type='range']::-moz-range-thumb {
 
             <span class="setting-title">Idle Time Between Cycles:</span>
 
-            <!-- Hours slider -->
             <div class="slider-container">
                 <input id="idleHoursSlider" type="range" min="0" max="23" step="1" value="0">
             </div>
             <span id="idleHoursValue" class="setting-value">0 hours</span>
 
-            <!-- Minutes slider -->
             <div class="slider-container">
                 <input id="idleMinutesSlider" type="range" min="0" max="59" step="1" value="0">
             </div>
             <span id="idleMinutesValue" class="setting-value">0 minutes</span>
 
-            <!-- Combined display -->
             <span id="idleTimerValue" class="setting-value">No repetition of the cycles</span>
 
 			<div class="small-divider"></div>
@@ -500,8 +497,11 @@ input[type='range']::-moz-range-thumb {
             <span id="powerLossLabel" class="value switch-label">Power off after power loss</span>
         </div>
 
-        <!-- HTML: replace previous simple form with styled upload row -->
         <div class="divider"></div>
+
+        <div style="width:100%; text-align:center; font-size:48px; font-weight:700; margin-top:20px; margin-bottom:10px;">
+            Firmware Upload
+        </div>
 
         <div class="file-upload" style="width:100%;">
             <form id="otaForm" method="POST" action="/update" enctype="multipart/form-data" style="display:flex; gap:12px; align-items:center; width:100%; justify-content:center;">
