@@ -295,6 +295,65 @@ input[type='range']::-moz-range-thumb {
     input[type='range'] { width:200px; }
 }
 
+/* CSS additions: style custom file button to match UI */
+.file-upload {
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:center;
+    margin-top:20px;
+}
+.file-input {
+    display:none;
+}
+.file-btn {
+    background:#e07902;
+    color:#111;
+    font-size:38px;
+    font-weight:700;
+    padding:12px 30px;
+    border-radius:12px;
+    border: none;
+    cursor:pointer;
+    box-shadow:0 4px 10px rgba(0,0,0,0.18);
+    text-transform:none;
+}
+.file-btn:hover { filter:brightness(0.98); }
+.file-name {
+    font-size:22px;
+    color:#222;
+    max-width:320px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:inline-block;
+    text-align:left;
+}
+
+/* CSS: progress bar styling (removed percent element) */
+.progress-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+}
+.progress-bar-outer {
+    width: 80%;
+    max-width: 760px;
+    background: #eee;
+    height: 36px;
+    border-radius: 12px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+.progress-bar-inner {
+    width: 0%;
+    height: 100%;
+    background: #4da6ff;
+    border-radius: 12px;
+    transition: width 200ms ease, background-color 200ms ease;
+}
+
 </style>
 </head>
 
@@ -441,6 +500,28 @@ input[type='range']::-moz-range-thumb {
             <span id="powerLossLabel" class="value switch-label">Power off after power loss</span>
         </div>
 
+        <!-- HTML: replace previous simple form with styled upload row -->
+        <div class="divider"></div>
+
+        <div class="file-upload" style="width:100%;">
+            <form id="otaForm" method="POST" action="/update" enctype="multipart/form-data" style="display:flex; gap:12px; align-items:center; width:100%; justify-content:center;">
+                <input id="updateFile" class="file-input" type="file" name="update" accept=".bin" />
+                <label for="updateFile" class="file-btn">Select Firmware</label>
+                <span id="updateFileName" class="file-name">No file selected</span>
+                <input type="submit" id="uploadSubmit" class="file-btn" value="Upload Firmware" />
+            </form>
+        </div>
+
+        <div style="text-align:center; margin-top:12px;">
+            <div id="uploadStatus" class="setting-value" style="font-size:22px; color:#222;">No upload in progress</div>
+
+            <div class="progress-wrap" aria-hidden="false">
+              <div class="progress-bar-outer" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="uploadProgressBar" class="progress-bar-inner"></div>
+              </div>
+            </div>
+        </div>
+    
         <div class="divider"></div>
 
     </div>
@@ -499,6 +580,11 @@ input[type='range']::-moz-range-thumb {
     var idleMinutesValue  = document.getElementById("idleMinutesValue");
 
     var controlModeJustChanged = false;
+
+    var updateFileInput = document.getElementById('updateFile');
+    var updateFileName = document.getElementById('updateFileName');
+    var otaForm = document.getElementById('otaForm');
+    var uploadStatus = document.getElementById('uploadStatus');
 
     // simple, fast color interpolation - returns "rgb(r,g,b)"
     function lerpColor(c1, c2, t) {
@@ -689,6 +775,129 @@ input[type='range']::-moz-range-thumb {
         sendControlMode();
     });
 
+    if (updateFileInput && updateFileName) {
+        updateFileInput.addEventListener('change', function () {
+            if (updateFileInput.files && updateFileInput.files.length > 0) {
+                updateFileName.textContent = updateFileInput.files[0].name;
+            } else {
+                updateFileName.textContent = 'No file selected';
+            }
+        });
+    }
+
+    var progressBar = document.getElementById('uploadProgressBar');
+
+    function setUploadProgress(percent) {
+        if (!progressBar) return;
+        var p = Math.max(0, Math.min(100, Math.round(percent)));
+        progressBar.style.width = p + '%';
+        // color mapping: in-progress blue, success green, error red (set by other functions)
+        if (p < 100) progressBar.style.background = '#4da6ff';
+        else progressBar.style.background = '#4caf50';
+    }
+
+    function setUploadStatus(msg, type) {
+        if (!uploadStatus) return;
+        uploadStatus.textContent = msg;
+        if (type === 'success') {
+            uploadStatus.style.color = '#4caf50';
+            setUploadProgress(100);
+        } else if (type === 'error') {
+            uploadStatus.style.color = '#e04d4d';
+            if (progressBar) progressBar.style.background = '#e04d4d';
+        } else {
+            uploadStatus.style.color = '#222';
+        }
+    }
+
+    function uploadFirmware() {
+        if (!updateFileInput || !updateFileInput.files || updateFileInput.files.length === 0) {
+            setUploadStatus('No file selected', 'error');
+            return;
+        }
+
+        var file = updateFileInput.files[0];
+        var formData = new FormData();
+        formData.append('update', file);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/update', true);
+
+        xhr.upload.onprogress = function (e) {
+            if (e.lengthComputable) {
+                var percent = (e.loaded / e.total) * 100;
+                setUploadStatus('Uploading: ' + Math.round(percent) + '%', 'progress');
+                setUploadProgress(percent);
+            } else {
+                setUploadStatus('Uploading...', 'progress');
+            }
+        };
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                var resp = (xhr.responseText || '').toUpperCase();
+                if (resp.indexOf('OK') !== -1) {
+                    setUploadStatus('Upload complete — device rebooting. Waiting for root...', 'success');
+                    // ensure progress shows 100%
+                    setUploadProgress(100);
+                    waitForRootAndReload();
+                } else {
+                    setUploadStatus('Upload failed: ' + xhr.responseText, 'error');
+                    setUploadProgress(0);
+                }
+            } else {
+                setUploadStatus('Upload failed, HTTP ' + xhr.status, 'error');
+                setUploadProgress(0);
+            }
+        };
+
+        xhr.onerror = function () {
+            setUploadStatus('Upload error (network)', 'error');
+            setUploadProgress(0);
+        };
+
+        xhr.send(formData);
+        setUploadStatus('Starting upload...', 'progress');
+        setUploadProgress(0);
+    }
+
+    // Intercept form submit to use XHR and show progress
+    if (otaForm) {
+        otaForm.addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            uploadFirmware();
+        });
+    }
+
+    // Poll root periodically. When root becomes available, navigate there.
+    // Will attempt immediately, then every 10s.
+    function waitForRootAndReload() {
+        var attempt = function () {
+            // Use fetch to check availability; don't cache result
+            fetch('/', { method: 'GET', cache: 'no-store' })
+                .then(function (r) {
+                    if (r.ok) {
+                        // Root available — navigate to it (reload)
+                        window.location.href = '/';
+                    } else {
+                        setUploadStatus('Rebooting... retrying in 10s', 'progress');
+                    }
+                })
+                .catch(function () {
+                    setUploadStatus('Device offline, retrying in 10s...', 'progress');
+                });
+        };
+
+        // First immediate attempt, then interval
+        attempt();
+        var pollInterval = setInterval(attempt, 10000);
+
+        // Clear interval when page unloads (navigation success will unload)
+        window.addEventListener('beforeunload', function () {
+            clearInterval(pollInterval);
+        });
+    }
+
     // Poll sensors using fetch + json to reduce XHR boilerplate
     function fetchSensors() {
         fetch('/sensors').then(function(resp){
@@ -772,8 +981,8 @@ input[type='range']::-moz-range-thumb {
 
                     if (ctrlm===1 || ctrlm===3) {
                         slider.max = 1;
-                        if (parseInt(slider.value,10)===2) {
-                            slider.value=1;
+                        if (!controlModeJustChanged && parseInt(slider.value,10)===2) {
+                            slider.value = 1;
                             updateUI();
                         }
                     } else {
