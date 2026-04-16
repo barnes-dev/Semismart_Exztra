@@ -32,10 +32,8 @@
 #if BLUETOOTH_WIFI_ENABLED
 #include "../../include/connectivity/sm_webserver.h"
 
-// output buffer
-char temp[35000];
-// Copy PROGMEM into RAM (portable)
-char fmtBuf[35000];
+char temp[40000];
+char fmtBuf[40000];
 
 WebServer msserver(80);
 
@@ -45,7 +43,7 @@ SemiSmartWebServer sswServer;
 
 void SemiSmartWebServer::smwebsetup(void) {
 	if (MDNS.begin("esp32")) {
-//		Serial.println("MDNS responder started");
+		//		Serial.println("MDNS responder started");
 	}
 
 	msserver.on("/", std::bind(&SemiSmartWebServer::handleRoot, &sswServer));
@@ -59,9 +57,13 @@ void SemiSmartWebServer::smwebsetup(void) {
 	msserver.on("/setidlestart", std::bind(&SemiSmartWebServer::handleSetIdleStart, &sswServer));
 	msserver.on("/setscreensaver", std::bind(&SemiSmartWebServer::handleSetScreenSaver, &sswServer));
 	msserver.on("/setpowerlossmemory", std::bind(&SemiSmartWebServer::handleSetPowerLossMemory, &sswServer));
+	// OTA update endpoint: upload handled by second callback
+	msserver.on("/update", HTTP_POST,
+		std::bind(&SemiSmartWebServer::handleUpdate, &sswServer),
+		std::bind(&SemiSmartWebServer::handleUpdateUpload, &sswServer));
 	msserver.onNotFound(std::bind(&SemiSmartWebServer::handleNotFound, &sswServer));
 	msserver.begin();
-//	Serial.println("HTTP server started");
+	//	Serial.println("HTTP server started");
 }
 
 void SemiSmartWebServer::smwebloop(void) {
@@ -405,6 +407,50 @@ void SemiSmartWebServer::handleNotFound() {
 	}
 	msserver.send(404, "text/plain", message);
 	digitalWrite(led, 0);
+}
+
+// Final handler called after upload finishes (sends response and restarts)
+void SemiSmartWebServer::handleUpdate() {
+	digitalWrite(led, 1);
+	msserver.sendHeader("Connection", "close");
+	if (Update.hasError()) {
+		msserver.send(200, "text/plain", "FAIL");
+	}
+	else {
+		msserver.send(200, "text/plain", "OK");
+	}
+	digitalWrite(led, 0);
+	// allow response to be sent before restarting
+	delay(100);
+	ESP.restart();
+}
+
+static NullPrint nullPrint;
+
+// Upload handler: processes incoming multipart file data and writes to flash
+void SemiSmartWebServer::handleUpdateUpload() {
+	HTTPUpload& upload = msserver.upload();
+	if (upload.status == UPLOAD_FILE_START) {
+		digitalWrite(led, 1);
+		// Use the provided total size when available, otherwise allow unknown size streaming.
+		uint32_t updateSize = upload.totalSize ? upload.totalSize : UPDATE_SIZE_UNKNOWN;
+		if (!Update.begin(updateSize)) {  // start update
+			// Report update library error via its API but route output to nullPrint (no Serial)
+			Update.printError(nullPrint);
+		}
+	} else if (upload.status == UPLOAD_FILE_WRITE) {
+		if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+			Update.printError(nullPrint);
+		}
+	} else if (upload.status == UPLOAD_FILE_END) {
+		if (!Update.end(true)) { // true to set the size to the current progress
+			Update.printError(nullPrint);
+		}
+		// nothing else to print here (reboot handled in handleUpdate)
+	} else {
+		// Unexpected status - do not output to Serial, optionally surface via Update API
+		// No-op to preserve functionality
+	}
 }
 
 
