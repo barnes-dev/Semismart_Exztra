@@ -71,7 +71,6 @@ input[type='range'] {
     background:transparent;
 }
 
-/* Track styling */
 input[type='range']::-webkit-slider-runnable-track {
     height:12px;
     background:#ddd;
@@ -83,8 +82,6 @@ input[type='range']::-moz-range-track {
     border-radius:6px;
 }
 
-/* Thumb styling uses CSS variable --thumb-color so JS only needs to set that variable on the input element.
-   This avoids creating many <style> elements at runtime (smaller footprint, fewer DOM ops). */
 input[type='range']::-webkit-slider-thumb {
     -webkit-appearance:none;
     width:60px;
@@ -239,7 +236,6 @@ input[type='range']::-moz-range-thumb {
     transform: translateX(61px);
 }
 
-/* Sensor Mode Colors */
 .sensor-temp .slider-toggle {
     background-color: #ff4d4d !important;
 }
@@ -256,7 +252,6 @@ input[type='range']::-moz-range-thumb {
     background-color: #c27dff !important;
 }
 
-/* Fullwidth sliders */
 .fullwidth-setting {
     width: 100%;
     display: flex;
@@ -295,7 +290,6 @@ input[type='range']::-moz-range-thumb {
     input[type='range'] { width:200px; }
 }
 
-/* CSS additions: style custom file button to match UI */
 .file-upload {
     display:flex;
     gap:12px;
@@ -303,9 +297,11 @@ input[type='range']::-moz-range-thumb {
     justify-content:center;
     margin-top:20px;
 }
+
 .file-input {
     display:none;
 }
+
 .file-btn {
     background:#e07902;
     color:#111;
@@ -318,7 +314,11 @@ input[type='range']::-moz-range-thumb {
     box-shadow:0 4px 10px rgba(0,0,0,0.18);
     text-transform:none;
 }
-.file-btn:hover { filter:brightness(0.98); }
+
+.file-btn:hover { 
+    filter:brightness(0.98); 
+}
+
 .file-name {
     font-size:22px;
     color:#222;
@@ -330,7 +330,6 @@ input[type='range']::-moz-range-thumb {
     text-align:left;
 }
 
-/* CSS: progress bar styling (removed percent element) */
 .progress-wrap {
     width: 100%;
     display: flex;
@@ -465,19 +464,16 @@ input[type='range']::-moz-range-thumb {
 
             <span class="setting-title">Idle Time Between Cycles:</span>
 
-            <!-- Hours slider -->
             <div class="slider-container">
                 <input id="idleHoursSlider" type="range" min="0" max="23" step="1" value="0">
             </div>
             <span id="idleHoursValue" class="setting-value">0 hours</span>
 
-            <!-- Minutes slider -->
             <div class="slider-container">
                 <input id="idleMinutesSlider" type="range" min="0" max="59" step="1" value="0">
             </div>
             <span id="idleMinutesValue" class="setting-value">0 minutes</span>
 
-            <!-- Combined display -->
             <span id="idleTimerValue" class="setting-value">No repetition of the cycles</span>
 
 			<div class="small-divider"></div>
@@ -500,8 +496,11 @@ input[type='range']::-moz-range-thumb {
             <span id="powerLossLabel" class="value switch-label">Power off after power loss</span>
         </div>
 
-        <!-- HTML: replace previous simple form with styled upload row -->
         <div class="divider"></div>
+
+        <div style="width:100%; text-align:center; font-size:48px; font-weight:700; margin-top:20px; margin-bottom:10px;">
+            Firmware Upload
+        </div>
 
         <div class="file-upload" style="width:100%;">
             <form id="otaForm" method="POST" action="/update" enctype="multipart/form-data" style="display:flex; gap:12px; align-items:center; width:100%; justify-content:center;">
@@ -529,14 +528,6 @@ input[type='range']::-moz-range-thumb {
 <script>
 (function() {
 
-    // small helper - converts minutes to "HHh MMm"
-    function minutesToHHMM(mins) {
-        const h = Math.floor(mins / 60);
-        const m = mins % 60;
-        return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
-    }
-
-    // cache DOM nodes
     var slider           = document.getElementById('powerSlider');
     var indicator        = document.getElementById('powerIndicator');
     var status           = document.getElementById('powerStatus');
@@ -585,8 +576,8 @@ input[type='range']::-moz-range-thumb {
     var updateFileName = document.getElementById('updateFileName');
     var otaForm = document.getElementById('otaForm');
     var uploadStatus = document.getElementById('uploadStatus');
+    var progressBar = document.getElementById('uploadProgressBar');
 
-    // simple, fast color interpolation - returns "rgb(r,g,b)"
     function lerpColor(c1, c2, t) {
         return 'rgb(' +
             Math.round(c1[0] + (c2[0] - c1[0]) * t) + ',' +
@@ -609,7 +600,6 @@ input[type='range']::-moz-range-thumb {
                parseInt(idleMinutesSlider.value, 10);
     }
 
-    // Set per-input CSS variable --thumb-color to avoid creating <style> tags at runtime
     function setThumbColor(sl, color) {
         if (!sl) return;
         try { sl.style.setProperty('--thumb-color', color); } catch (e) {}
@@ -619,6 +609,12 @@ input[type='range']::-moz-range-thumb {
         if (v === 0) return { text:'OFF',     color:'#ff4d4d', param:'off' };
         if (v === 1) return { text:'CYCLING', color:'#4caf50', param:'cycling' };
         return          { text:'ACTIVE',  color:'#4d79ff', param:'on' };
+    }
+
+    function minutesToHHMM(mins) {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
     }
 
     function computeControlMode() {
@@ -785,8 +781,6 @@ input[type='range']::-moz-range-thumb {
         });
     }
 
-    var progressBar = document.getElementById('uploadProgressBar');
-
     function setUploadProgress(percent) {
         if (!progressBar) return;
         var p = Math.max(0, Math.min(100, Math.round(percent)));
@@ -861,7 +855,6 @@ input[type='range']::-moz-range-thumb {
         setUploadProgress(0);
     }
 
-    // Intercept form submit to use XHR and show progress
     if (otaForm) {
         otaForm.addEventListener('submit', function (ev) {
             ev.preventDefault();
@@ -869,8 +862,6 @@ input[type='range']::-moz-range-thumb {
         });
     }
 
-    // Poll root periodically. When root becomes available, navigate there.
-    // Will attempt immediately, then every 10s.
     function waitForRootAndReload() {
         var attempt = function () {
             // Use fetch to check availability; don't cache result
@@ -888,17 +879,14 @@ input[type='range']::-moz-range-thumb {
                 });
         };
 
-        // First immediate attempt, then interval
         attempt();
         var pollInterval = setInterval(attempt, 10000);
 
-        // Clear interval when page unloads (navigation success will unload)
         window.addEventListener('beforeunload', function () {
             clearInterval(pollInterval);
         });
     }
 
-    // Poll sensors using fetch + json to reduce XHR boilerplate
     function fetchSensors() {
         fetch('/sensors').then(function(resp){
             if (!resp.ok) throw new Error('network');
