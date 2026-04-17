@@ -66,7 +66,6 @@ bool isDeviceConnected();
 bool isConnectTimeout();
 std::string getDeviceName();
 std::string getReceivedValue();
-static void namegapCallback(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* param);
 
 
 private:
