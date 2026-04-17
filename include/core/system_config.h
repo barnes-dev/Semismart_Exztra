@@ -83,7 +83,15 @@
 
 // ===================== Thermistor configuration =====================
 #define THERMISTOR_SERIES_RESISTOR 10000.0  // Series resistor (10KΩ)
+#define THERMISTOR_NOMINAL_RESISTANCE 100000.0 // Nominal resistance at 25°C (100KΩ)
+#define THERMISTOR_BETA 3950.0              // Beta coefficient for the thermistor
+#if ARDUINO_ESP32
+#define ADC_MAX 4095.0  // 12-bit ADC
+#define VCC 3.3        // Supply voltage for thermistor (3.3V for ESP32)
+#else
 #define ADC_MAX 1023.0  // 10-bit ADC
+#define VCC 5.0        // Supply voltage for thermistor (5V for Nano)
+#endif
 
 // ===================== Thermal security system configuration =====================
 #define SECURITY_MAX_HEATER_TEMP 55.0        // Maximum heater temperature (°C)
@@ -97,10 +105,15 @@
 // ===================== Sensor configuration =====================
 #define SECURITY_SENSOR_ERROR_VALUE -999     // Sensor error value
 #define SECURITY_MIN_ADC_VALUE 50            // Minimum valid ADC value
-#define SECURITY_MAX_ADC_VALUE 970           // Maximum valid ADC value
 #define SECURITY_SENSOR_RESET_TIME 1000      // 1 second for automatic recovery
 #define SECURITY_SENSOR_MAX_TEMP_CHANGE 15.0 // Maximum temperature change per reading in sensor
-#define SECURITY_NO_SENSOR 300
+#if ARDUINO_ESP32
+#define SECURITY_NO_SENSOR 454
+#define SECURITY_MAX_ADC_VALUE 3900           // Maximum valid ADC value
+#else
+#define SECURITY_NO_SENSOR 113.5
+#define SECURITY_MAX_ADC_VALUE 970           // Maximum valid ADC value
+#endif
 
 // ===================== Intervals for system =====================
 struct SystemIntervals {
