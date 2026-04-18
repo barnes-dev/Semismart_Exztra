@@ -27,107 +27,106 @@ extern Adafruit_ST7796S display;
 extern bool displayAvailable;
 
 // Navigation strings
-static const char PROGMEM str_cooling[] = "COOLING";
-static const char PROGMEM str_cycling[] = "CYCLING";
-static const char PROGMEM str_system_off[] = "SYS OFF";
-static const char PROGMEM str_heat_off[] = "HEAT OFF";
-static const char PROGMEM str_fan_off[] = "FAN OFF";
-static const char PROGMEM str_standby[] = "Standby";
-static const char PROGMEM str_screen_saver_never[] = "OFF";
+static const char PROGMEM str_cooling[]					= "COOLING";
+static const char PROGMEM str_cycling[]					= "CYCLING";
+static const char PROGMEM str_system_off[]				= "SYS OFF";
+static const char PROGMEM str_heat_off[]				= "HEAT OFF";
+static const char PROGMEM str_fan_off[]					= "FAN OFF";
+static const char PROGMEM str_standby[]					= "Standby";
+static const char PROGMEM str_screen_saver_never[]		= "OFF";
 
 // Operation mode strings
-static const char PROGMEM str_printing[] = "PRINTING";
-static const char PROGMEM str_drying[] = "DRYING";
-static const char PROGMEM str_warning[] = "WARN";
-static const char PROGMEM str_balance[] = "BALANCE";
+static const char PROGMEM str_printing[]				= "PRINTING";
+static const char PROGMEM str_drying[]					= "DRYING";
+static const char PROGMEM str_warning[]					= "WARN";
+static const char PROGMEM str_balance[]					= "BALANCE";
 
 // Configuration strings
-static const char PROGMEM str_set_temp[] = "Set Temp";
-static const char PROGMEM str_change_save[] = "+/-:Chg O:Save";
-static const char PROGMEM str_set_humidity[] = "Set Humidity";
-static const char PROGMEM str_operation[] = "Operation";
-static const char PROGMEM str_mode[] = "Mode";
-static const char PROGMEM str_operation_mode[] = "Op Mode";
-static const char PROGMEM str_power_loss_memory_one[] = "Mode After";
-static const char PROGMEM str_power_loss_memory_two[] = "Power Return";
-static const char PROGMEM str_power_off[] = "Power Off";
-static const char PROGMEM str_last_mode[] = "Last Mode";
-static const char PROGMEM str_by_hum[] = "By Humid";
-static const char PROGMEM str_dry[] = "Dry Timer";
-static const char PROGMEM str_screen_saver[] = "Screen Saver";
-
+static const char PROGMEM str_set_temp[]				= "Set Temp";
+static const char PROGMEM str_change_save[]				= "+/-:Chg O:Save";
+static const char PROGMEM str_set_humidity[]			= "Set Humidity";
+static const char PROGMEM str_operation[]				= "Operation";
+static const char PROGMEM str_mode[]					= "Mode";
+static const char PROGMEM str_operation_mode[]			= "Op Mode";
+static const char PROGMEM str_power_loss_memory_one[]	= "Mode After";
+static const char PROGMEM str_power_loss_memory_two[]	= "Power Return";
+static const char PROGMEM str_power_off[]				= "Power Off";
+static const char PROGMEM str_last_mode[]				= "Last Mode";
+static const char PROGMEM str_by_hum[]					= "By Humid";
+static const char PROGMEM str_dry[]						= "Dry Timer";
+static const char PROGMEM str_screen_saver[]			= "Screen Saver";
 // Control mode strings
-static const char PROGMEM str_mode_control[] = "Mode:";
-static const char PROGMEM str_auto_temp[] = "AUTO TEMP";
-static const char PROGMEM str_auto_hum[] = "AUTO HUM";
-static const char PROGMEM str_user_temp[] = "USER TEMP";
-static const char PROGMEM str_user_hum[] = "USER HUM";
+static const char PROGMEM str_mode_control[]			= "Mode:";
+static const char PROGMEM str_auto_temp[]				= "AUTO TEMP";
+static const char PROGMEM str_auto_hum[]				= "AUTO HUM";
+static const char PROGMEM str_user_temp[]				= "USER TEMP";
+static const char PROGMEM str_user_hum[]				= "USER HUM";
 
 // Dry mode string
-static const char PROGMEM str_dry_mode_time[] = "Set time";
+static const char PROGMEM str_dry_mode_time[]			= "Set time";
 
 // Units
-static const char PROGMEM str_celsius[] = "C";
-static const char PROGMEM str_percent[] = "%";
-static const char PROGMEM str_seconds[] = " sec";
-static const char PROGMEM str_minutes[] = " min";
+static const char PROGMEM str_celsius[]					= "C";
+static const char PROGMEM str_percent[]					= "%";
+static const char PROGMEM str_seconds[]					= " sec";
+static const char PROGMEM str_minutes[]					= " min";
 
 // Display labels
-static const char PROGMEM str_temp_label[] = "Temperature ";
-static const char PROGMEM str_humidity_label[] = "Humidity ";
-static const char PROGMEM str_led_pattern_label[] = "LED Pattern";
-static const char PROGMEM str_brightness_level[] = "Brightness";
-static const char PROGMEM str_eta_label[] = "ETA";
-static const char PROGMEM str_dry_time_start[] = "Drying starts in";
-static const char PROGMEM str_heat_format[] = "Heat %d%%";
-static const char PROGMEM str_heater_format[] = "Heat";
-static const char PROGMEM str_fan_format[] = "Fan speed";
-static const char PROGMEM str_space[] = " ";
-static const char PROGMEM str_greater[] = " -> ";
-static const char PROGMEM str_percent_sign[] = "%";
+static const char PROGMEM str_temp_label[]				= "Temperature ";
+static const char PROGMEM str_humidity_label[]			= "Humidity ";
+static const char PROGMEM str_led_pattern_label[]		= "LED Pattern";
+static const char PROGMEM str_brightness_level[]		= "Brightness";
+static const char PROGMEM str_eta_label[]				= "ETA";
+static const char PROGMEM str_dry_time_start[]			= "Drying starts in";
+static const char PROGMEM str_heat_format[]				= "Heat %d%%";
+static const char PROGMEM str_heater_format[]			= "Heat";
+static const char PROGMEM str_fan_format[]				= "Fan speed";
+static const char PROGMEM str_space[]					= " ";
+static const char PROGMEM str_greater[]					= " -> ";
+static const char PROGMEM str_percent_sign[]			= "%";
 
 #if BLUETOOTH_WIFI_ENABLED
 // Bluetooth and Wifi strings
-static const char PROGMEM str_bluetooth[] = "Bluetooth";
-static const char PROGMEM str_BT_scanning1[] = "Scanning for";
-static const char PROGMEM str_BT_scanning2[] = "Bluetooth devices";
-static const char PROGMEM str_BT_scanning[] = "Scanning Bluetooth";
-static const char PROGMEM str_BT_no_devices[] = "No devices found";
-static const char PROGMEM str_BT_connected_no_name[] = "to your device";
-static const char PROGMEM str_bluetooth_connected[] = "BT Connected";
-static const char PROGMEM str_bluetooth_disconnected[] = "BT Disconnected";
-static const char PROGMEM str_bluetooth_instruction1[] = "Use your connected";
-static const char PROGMEM str_bluetooth_instruction2[] = "BT device to select";
-static const char PROGMEM str_bluetooth_instruction3[] = "the WiFi network.";
-static const char PROGMEM str_bluetooth_instruction4[] = "device to insert the";
-static const char PROGMEM str_bluetooth_instruction5[] = "WiFi password";
-static const char PROGMEM str_bluetooth_instructions[] = "Use BT choose Network";
-static const char PROGMEM str_wifi[] = "WiFi";
-static const char PROGMEM str_wifi_status[] = "WiFi Status:";
-static const char PROGMEM str_wifi_no_networks_1[] =	"No networks found";
-static const char PROGMEM str_wifi_scan_completed_2[] = "Scan completed";
-static const char PROGMEM str_wifi_connected_3[] =		"WiFi Connected";
-static const char PROGMEM str_connection_failed_4[] =	"Connection Failed";
-static const char PROGMEM str_connection_lost_5[] =		"Connection Lost";
-static const char PROGMEM str_wifi_disconnected_6[] =	"WiFi Disconnected";
-static const char PROGMEM str_wifi_list_networks_Nr[] = "Nr";
-static const char PROGMEM str_wifi_list_divider[] = "|";
-static const char PROGMEM str_wifi_list_networks_SSID[] = "SSID:";
-static const char PROGMEM str_ip_address[] = "IP:";
-static const char PROGMEM str_mac_address[] = "MAC: ";
-static const char PROGMEM str_disconnecting[] = "Disconnecting...";
-static const char PROGMEM str_connecting[] = "Connecting";
-static const char PROGMEM str_wifi_connecting[] = "Connecting WiFi";
-static const char PROGMEM str_wifi_continue[] = "Any button = continue";
-static const char PROGMEM str_exit_config1[] = "Exit config with";
-static const char PROGMEM str_exit_config2[] = "lower button";
+static const char PROGMEM str_bluetooth[]				= "Bluetooth";
+static const char PROGMEM str_BT_scanning1[]			= "Scanning for";
+static const char PROGMEM str_BT_scanning2[]			= "Bluetooth devices";
+static const char PROGMEM str_BT_scanning[]				= "Scanning Bluetooth";
+static const char PROGMEM str_BT_no_devices[]			= "No devices found";
+static const char PROGMEM str_BT_connected_no_name[]	= "to your device";
+static const char PROGMEM str_bluetooth_connected[]		= "BT Connected";
+static const char PROGMEM str_bluetooth_disconnected[]	= "BT Disconnected";
+static const char PROGMEM str_bluetooth_instruction1[]	= "Use your connected";
+static const char PROGMEM str_bluetooth_instruction2[]	= "BT device to select";
+static const char PROGMEM str_bluetooth_instruction3[]	= "the WiFi network.";
+static const char PROGMEM str_bluetooth_instruction4[]	= "device to insert the";
+static const char PROGMEM str_bluetooth_instruction5[]	= "WiFi password";
+static const char PROGMEM str_bluetooth_instructions[]	= "Use BT choose Network";
+static const char PROGMEM str_wifi[]					= "WiFi";
+static const char PROGMEM str_wifi_status[]				= "WiFi Status:";
+static const char PROGMEM str_wifi_no_networks_1[]		= "No networks found";
+static const char PROGMEM str_wifi_scan_completed_2[]	= "Scan completed";
+static const char PROGMEM str_wifi_connected_3[]		= "WiFi Connected";
+static const char PROGMEM str_connection_failed_4[]		= "Connection Failed";
+static const char PROGMEM str_connection_lost_5[]		= "Connection Lost";
+static const char PROGMEM str_wifi_disconnected_6[]		= "WiFi Disconnected";
+static const char PROGMEM str_wifi_list_networks_Nr[]	= "Nr";
+static const char PROGMEM str_wifi_list_divider[]		= "|";
+static const char PROGMEM str_wifi_list_networks_SSID[]	= "SSID:";
+static const char PROGMEM str_ip_address[]				= "IP:";
+static const char PROGMEM str_mac_address[]				= "MAC: ";
+static const char PROGMEM str_disconnecting[]			= "Disconnecting...";
+static const char PROGMEM str_connecting[]				= "Connecting";
+static const char PROGMEM str_wifi_connecting[]			= "Connecting WiFi";
+static const char PROGMEM str_wifi_continue[]			= "Any button = continue";
+static const char PROGMEM str_exit_config1[]			= "Exit config with";
+static const char PROGMEM str_exit_config2[]			= "lower button";
 #endif
 
 // Helper functions for PROGMEM strings		  
 #if DISPLAY_TYPE_SSD1306
 inline void printProgmemString(Adafruit_SSD1306* disp, const char* str) {
 		if (!disp) return;
-  char buffer[20];
+  char buffer[22];
   strcpy_P(buffer, str);
   disp->print(buffer);
 }
@@ -135,7 +134,7 @@ inline void printProgmemString(Adafruit_SSD1306* disp, const char* str) {
 #elif DISPLAY_TYPE_SH110X
 inline void printProgmemString(Adafruit_SH1107* disp, const char* str) {
   if (!disp) return;
-  char buffer[20];
+  char buffer[22];
   strcpy_P(buffer, str);
   disp->print(buffer);
 }
@@ -143,7 +142,7 @@ inline void printProgmemString(Adafruit_SH1107* disp, const char* str) {
 #elif DISPLAY_TYPE_SSD1351
 inline void printProgmemString(Adafruit_SSD1351* disp, const char* str) {
 	if (!disp) return;
-	char buffer[20];
+	char buffer[22];
 	strcpy_P(buffer, str);
 	disp->print(buffer);
 }
@@ -151,7 +150,7 @@ inline void printProgmemString(Adafruit_SSD1351* disp, const char* str) {
 #elif DISPLAY_TYPE_ST7796S
 inline void printProgmemString(Adafruit_ST7796S* disp, const char* str) {
   if (!disp) return;
-  char buffer[20];
+  char buffer[22];
   strcpy_P(buffer, str);
   disp->print(buffer);
 }
@@ -159,7 +158,7 @@ inline void printProgmemString(Adafruit_ST7796S* disp, const char* str) {
 
 
 inline const char* getProgmemString(const char* progmemString) {
-  static char buffer[20];
+  static char buffer[22];
   strcpy_P(buffer, progmemString);
   return buffer;
 }

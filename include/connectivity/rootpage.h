@@ -497,6 +497,46 @@ input[type='range']::-moz-range-thumb {
         </div>
 
         <div class="divider"></div>
+        <div id="ledSection" style="display:none;">
+            <div style="width:100%; text-align:center; font-size:48px; font-weight:700; margin-top:20px; margin-bottom:10px;">
+                LED Settings
+            </div>
+
+            <div class="sensor-item target-row">
+                <span class="label">LED Pattern:</span>
+                <select id="ledPatternSelect" style="font-size:36px; padding:8px; width:380px;">
+                    <option value="0">Solid White</option>
+                    <option value="1">Pulsing White</option>
+                    <option value="2">Rainbow</option>
+                    <option value="3">Rainbow Chase</option>
+                    <option value="4">Fire Flicker</option>
+                    <option value="5">Plasma</option>
+                    <option value="6">Sparkle</option>
+                    <option value="7">Sparkle Colorful</option>
+                    <option value="8">Aurora Fade</option>
+                    <option value="9">Color Drift</option>
+                    <option value="10">Spooky Flicker</option>
+                    <option value="11">Ghost Pulse</option>
+                    <option value="12">Lightning Storm</option>
+                    <option value="13">Creepy Crawl</option>
+                    <option value="14">Zombie March</option>
+                    <option value="15">Eyes in the Dark</option>
+                </select>
+                <span id="ledPatternLabel" class="value switch-label" style="width:260px; margin-left:8px;"></span>
+            </div>
+
+            <div class="fullwidth-setting" id="ledBrightnessBlock" style="display:none;">
+                <span class="setting-title">LED Brightness:</span>
+
+                <div class="slider-container">
+                    <input id="ledBrightnessSlider" type="range" min="0" max="4" step="1" value="2">
+                </div>
+
+                <span id="ledBrightnessValue" class="setting-value">Mid</span>
+            </div>
+
+        <div class="divider"></div>
+        </div>
 
         <div style="width:100%; text-align:center; font-size:48px; font-weight:700; margin-top:20px; margin-bottom:10px;">
             Firmware Upload
@@ -577,6 +617,32 @@ input[type='range']::-moz-range-thumb {
     var otaForm = document.getElementById('otaForm');
     var uploadStatus = document.getElementById('uploadStatus');
     var progressBar = document.getElementById('uploadProgressBar');
+
+    var brightnessJustChanged = false;
+    var ledPatternSelect = document.getElementById("ledPatternSelect");
+    var ledPatternLabel  = document.getElementById("ledPatternLabel");
+    var ledBrightnessSlider = document.getElementById("ledBrightnessSlider");
+    var ledBrightnessValue  = document.getElementById("ledBrightnessValue");
+
+    const LED_BRIGHTNESS_LABELS = [
+        "Lowest",
+        "Low",
+        "Mid",
+        "High",
+        "Highest"
+    ];
+ 
+
+
+     if (ledPatternSelect) {
+         ledPatternSelect.addEventListener("change", function () {
+             var v = parseInt(ledPatternSelect.value, 10);
+             fetch("/setledpattern?value=" + encodeURIComponent(v)).catch(()=>{});
+             // reflect change immediately
+             var selectedText = ledPatternSelect.options[ledPatternSelect.selectedIndex].text;
+             if (ledPatternLabel) ledPatternLabel.textContent = selectedText;
+         });
+     }
 
     function lerpColor(c1, c2, t) {
         return 'rgb(' +
@@ -769,6 +835,15 @@ input[type='range']::-moz-range-thumb {
         sensorModeSwitch.classList.toggle("sensor-hum", !isTemp);
 
         sendControlMode();
+    });
+
+    ledBrightnessSlider.addEventListener("change", function () {
+        const v = parseInt(ledBrightnessSlider.value, 10);
+
+        brightnessJustChanged = true;
+        fetch("/setledbrightness?value=" + encodeURIComponent(v)).catch(()=>{});
+
+        setTimeout(() => brightnessJustChanged = false, 1200);
     });
 
     if (updateFileInput && updateFileName) {
@@ -1070,7 +1145,31 @@ input[type='range']::-moz-range-thumb {
                         : "Power off after power loss";
                 }
 
-                if (o.startHours !== undefined) {
+                var ledSection = document.getElementById("ledSection");
+                const hasLedInfo = (o.ledPatternIndex !== undefined) || (o.ledBrightnessLevel !== undefined);
+                if (ledSection) ledSection.style.display = hasLedInfo ? "block" : "none";
+                var ledBrightnessBlock = document.getElementById("ledBrightnessBlock");
+                if (ledBrightnessBlock) ledBrightnessBlock.style.display = hasLedInfo ? "block" : "none";
+
+                 if (o.ledPatternIndex !== undefined && ledPatternSelect) {
+                     const idx = parseInt(o.ledPatternIndex, 10);
+                     if (!isNaN(idx)) {
+                         if (String(ledPatternSelect.value) !== String(idx)) ledPatternSelect.value = idx;
+                         if (ledPatternLabel) ledPatternLabel.textContent = (o.ledPatternName || ledPatternSelect.options[ledPatternSelect.selectedIndex].text);
+                     }
+                 }
+
+                if (!brightnessJustChanged &&
+                    o.ledBrightnessLevel !== undefined && ledBrightnessSlider) {
+                    const b = parseInt(o.ledBrightnessLevel, 10);
+                    if (!isNaN(b)) {
+                        ledBrightnessSlider.value = b;
+                        ledBrightnessValue.textContent = LED_BRIGHTNESS_LABELS[b];
+                        setThumbColor(ledBrightnessSlider, "#4da6ff");
+                    }
+                }
+
+               if (o.startHours !== undefined) {
                     const SH=parseInt(o.startHours,10);
                     const SM=parseInt(o.startMinutes,10);
                     const SS=parseInt(o.startSeconds,10);

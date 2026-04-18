@@ -118,7 +118,7 @@ void setup() {
 #if LED_MANAGER_ENABLED
 	// Add LEDs ***************************************************************
 	ledManager.begin();  // Initializes strip, brightness, pattern
-	                     // End Add LEDs ************************************************************
+	// End Add LEDs ************************************************************
 #endif
 
 	pinMode(PIN_HEATER, OUTPUT);
@@ -301,8 +301,6 @@ void handleButtonLogic() {
 			bool turnOn = !stateManager.isSystemOn();
 			stateManager.setSystemState(turnOn ? SYSTEM_ON : SYSTEM_OFF);
 			saveSystemStateEEPROM(stateManager.getSystemState());
-			Serial.print("readSystemStateEEPROM: ");
-			Serial.println(readSystemStateEEPROM());
 			setStandbyMode(false);
 			// When turning ON AND in DryTime mode, reset the dry timer to start counting from the moment of activation
 			if (turnOn && stateManager.getMode() == DRY_MODE_BY_TIME) {

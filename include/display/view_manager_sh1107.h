@@ -50,10 +50,10 @@ private:
     void drawFanStatus();
     void drawHeaterStatus();
     void drawLEDStatus();
+    void drawScreenSaverSetting();
     void drawPowerOutageMemory();
-	void drawScreenSaverSetting();
-	void StartSubScreens(const char* title);
     void ScreenSaverOn();
+    void StartSubScreens(const char* title);
     void SaveEnterText();
     void EditPartOfSubScreen(const char* label);
     void TimeConfiguration(uint32_t TimeVariable);

@@ -79,7 +79,7 @@ void ViewManager::drawSplash() {
 	_display->setTextSize(3);
 	_display->setTextColor(ST7796_WHITE);
 
-#if LED_MANAGER_ENABLED && ARDUINO_ESP32
+#if LED_MANAGER_ENABLED && !ARDUINO_ESP32
 	_display->drawRGBBitmap((SCREEN_WIDTH / 2) - 100, SCREEN_HEIGHT / 12, Voxel_Logo_Color_Inv, 200, 200);  //  Draw a Voxel Logo icon at the end of the temp printout
 #else
 	_display->drawRGBBitmap((SCREEN_WIDTH / 2) - 120, SCREEN_HEIGHT / 12, Voxel_Logo_Color_Inv, 240, 240);  //  Draw a Voxel Logo icon at the end of the temp printout
@@ -1022,7 +1022,7 @@ void ViewManager::drawLEDStatus() {
 		// store the new warning text
 		strncpy(lastLEDPattern, ledManager.getCurrentPatternName(), sizeof(lastLEDPattern) - 1);
 		lastLEDPattern[sizeof(lastLEDPattern) - 1] = '\0';
-		_display->fillRect(0, HeightOnScreen, w1, h1 + 2, ST7796_BLACK); // Clear area for scrolling text
+		_display->fillRect(0, HeightOnScreen, (SCREEN_WIDTH * 0.6), h1 + 2, ST7796_BLACK); // Clear area for scrolling text
 		stringDisplayed = true;
 	}
 	_display->print(ledManager.getCurrentPatternName());
@@ -1030,7 +1030,7 @@ void ViewManager::drawLEDStatus() {
 	if (!heightInitialized || lastBrightness != ledManager.getBrightnessLevel()) {
 		heightInitialized = true;
 		lastBrightness = ledManager.getBrightnessLevel();
-		_display->fillRect(0, HeightOnScreen, SCREEN_WIDTH, h1, ST7796_BLACK); // Clear area for scrolling text
+		_display->fillRect(0, HeightOnScreen, (SCREEN_WIDTH * 0.6), h1, ST7796_BLACK); // Clear area for scrolling text
 	}
 	_display->setCursor(0, HeightOnScreen);
 	printProgmemString(_display, str_brightness_level);  //Set the Brightness Label up on Screen

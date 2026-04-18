@@ -32,8 +32,8 @@
 #if BLUETOOTH_WIFI_ENABLED
 #include "../../include/connectivity/sm_webserver.h"
 
-char temp[40000];
-char fmtBuf[40000];
+char temp[60000];
+char fmtBuf[60000];
 
 WebServer msserver(80);
 
@@ -54,7 +54,11 @@ void SemiSmartWebServer::smwebsetup(void) {
 	msserver.on("/setmode", std::bind(&SemiSmartWebServer::handleSetMode, &sswServer));
 	msserver.on("/setcontrolmode", std::bind(&SemiSmartWebServer::handleSetControlMode, &sswServer));
 	msserver.on("/setdryduration", std::bind(&SemiSmartWebServer::handleSetDryDuration, &sswServer));
-	msserver.on("/setidlestart", std::bind(&SemiSmartWebServer::handleSetIdleStart, &sswServer));
+#if LED_MANAGER_ENABLED
+	msserver.on("/setledpattern", std::bind(&SemiSmartWebServer::handleSetLedPattern, &sswServer));
+	msserver.on("/setledbrightness", std::bind(&SemiSmartWebServer::handleSetLedBrightness, &sswServer));
+#endif
+ 	msserver.on("/setidlestart", std::bind(&SemiSmartWebServer::handleSetIdleStart, &sswServer));
 	msserver.on("/setscreensaver", std::bind(&SemiSmartWebServer::handleSetScreenSaver, &sswServer));
 	msserver.on("/setpowerlossmemory", std::bind(&SemiSmartWebServer::handleSetPowerLossMemory, &sswServer));
 	// OTA update endpoint: upload handled by second callback
@@ -162,7 +166,8 @@ void SemiSmartWebServer::handleSensors() {
 	int n = snprintf(
 		buf,
 		sizeof(buf),
-		"{\"temp\":%.2f,"
+		"{"
+		"\"temp\":%.2f,"
 		"\"hum\":%.2f,"
 		"\"state\":%u,"
 		"\"fanSpeed\":%u,"
@@ -186,13 +191,24 @@ void SemiSmartWebServer::handleSensors() {
 		"\"tempMax\":%u,"
 		"\"targetHumidity\":%u,"
 		"\"humMin\":%u,"
-		"\"humMax\":%u}",
+		"\"humMax\":%u"
+#if LED_MANAGER_ENABLED
+		",\"ledPatternIndex\":%u,"
+		"\"ledPatternName\":\"%s\","
+		"\"ledBrightnessLevel\":%u"
+#endif
+		"}",
 		t, h, state, fanSpeed, heatPower, oprMode, ctrlMode,
 		autoPrintMode, startHours, startMinutes, startSeconds, manualTurnOff,
 		dryTimerDuration, idleStartTimer, screenSaverStartTime, powerOutageMemoryMode,
 		ETAhours, ETAminutes, ETAseconds,
 		targetTemp, TEMP_MIN, TEMP_MAX,
 		th, HUM_MIN, HUM_MAX
+#if LED_MANAGER_ENABLED
+		, ledManager.getPatternIndex(),
+		ledManager.getCurrentPatternName(),
+		ledManager.getBrightnessLevel()
+#endif
 	);
 
 	if (n < 0) {
@@ -204,6 +220,34 @@ void SemiSmartWebServer::handleSensors() {
 
 	digitalWrite(led, 0);
 }
+
+#if LED_MANAGER_ENABLED
+void SemiSmartWebServer::handleSetLedPattern() {
+	if (!msserver.hasArg("value")) {
+		msserver.send(400, "text/plain", "Missing value");
+		return;
+	}
+	int idx = msserver.arg("value").toInt();
+	if (idx < 0) idx = 0;
+	if (idx > 15) idx = 15;
+	ledManager.setPattern((uint8_t)idx);
+	msserver.send(200, "text/plain", "OK");
+}
+
+void SemiSmartWebServer::handleSetLedBrightness() {
+	if (!msserver.hasArg("value")) {
+		msserver.send(400, "text/plain", "Missing value");
+		return;
+	}
+
+	int v = msserver.arg("value").toInt();
+	if (v < 0) v = 0;
+	if (v > 4) v = 4;
+
+	ledManager.setBrightnessLevel((uint8_t)v);
+	msserver.send(200, "text/plain", "OK");
+}
+#endif
 
 void SemiSmartWebServer::handlePower() {
 	digitalWrite(led, 1);

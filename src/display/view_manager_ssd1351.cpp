@@ -742,14 +742,14 @@ void ViewManager::drawLEDStatus() {
 		// store the new warning text
 		strncpy(lastLEDPattern, ledManager.getCurrentPatternName(), sizeof(lastLEDPattern) - 1);
 		lastLEDPattern[sizeof(lastLEDPattern) - 1] = '\0';
-		_display->fillRect(0, yPos, w1, h1 + 2, BLACK); // Clear area for scrolling text
+		_display->fillRect(0, yPos, (SCREEN_WIDTH * 0.75), h1 + 2, BLACK); // Clear area for scrolling text
 		stringDisplayed = true;
 	}
 	_display->print(ledManager.getCurrentPatternName());
 	if (!heightInitialized || lastBrightness != ledManager.getBrightnessLevel()) {
 		heightInitialized = true;
 		lastBrightness = ledManager.getBrightnessLevel();
-		_display->fillRect(0, yPos + 8, SCREEN_WIDTH, h1, BLACK); // Clear area for scrolling text
+		_display->fillRect(0, yPos + 8, (SCREEN_WIDTH * 0.75), h1, BLACK); // Clear area for scrolling text
 	}
 	_display->setCursor(0, yPos + 8);
 	printProgmemString(_display, str_brightness_level);  //Set the Brightness Label up on Screen

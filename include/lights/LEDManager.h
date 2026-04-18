@@ -1,3 +1,5 @@
+#include "../../user_config.h"
+#if LED_MANAGER_ENABLED
 #ifndef LED_MANAGER_H
 #define LED_MANAGER_H
 
@@ -12,6 +14,9 @@ public:
 
   void nextPattern();
   void nextBrightness();
+  void setPattern(uint8_t ledIndex);
+  void setBrightnessLevel(uint8_t brightnessIndex);
+
 
   const char* getCurrentPatternName() const;
   uint8_t getPatternIndex() const;
@@ -75,4 +80,5 @@ private:
   const unsigned long EEPROM_SAVE_DELAY = 10000;  // 10 seconds
 };
 
-#endif
+#endif // LED_MANAGER_H
+#endif // LED_MANAGER_ENABLED

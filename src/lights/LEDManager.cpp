@@ -1,5 +1,6 @@
-#include "../../include/lights/LEDManager.h"
 #include "../../user_config.h"
+#if LED_MANAGER_ENABLED
+#include "../../include/lights/LEDManager.h"
 #if ARDUINO_ESP32
 #include <Preferences.h>
 
@@ -21,7 +22,7 @@ void LEDManager::begin() {
 	LED_EEPROM.begin("led_storage", false);  // Use a separate namespace for LED settings
 	strip.begin();
 
-	randomSeed(analogRead(A0));  // or any unused analog pin | Critical to keep from freezing/locking up | LED Patterns that need it: FireFlicker
+	randomSeed(analogRead(A3));  // or any unused analog pin | Critical to keep from freezing/locking up | LED Patterns that need it: FireFlicker
 
 	// Read from EEPROM
 	uint8_t storedPattern = LED_EEPROM.getUInt("PATTERN_ADDR");
@@ -84,6 +85,26 @@ void LEDManager::update() {
 		settingsChanged = false;
 	}
 	LED_EEPROM.end();  // Close EEPROM after reading/writing
+}
+
+void LEDManager::setPattern(uint8_t ledIndex) {
+	if (ledIndex < NUM_PATTERNS && ledIndex != patternIndex) {
+		patternIndex = ledIndex;
+		settingsChanged = true;
+		settingsChangeTime = millis();
+		// Reset animation state for some patterns
+		pulseStartTime = millis();
+	}
+}
+
+void LEDManager::setBrightnessLevel(uint8_t brightnessIndex) {
+	if (brightnessIndex < NUM_BRIGHTNESS_LEVELS && brightnessIndex != brightnessLevelIndex) {
+		brightnessLevelIndex = brightnessIndex;
+		strip.setBrightness(brightnessLevels[brightnessLevelIndex]);
+		strip.show();
+		settingsChanged = true;
+		settingsChangeTime = millis();
+	}
 }
 
 void LEDManager::nextPattern() {
@@ -631,7 +652,7 @@ LEDManager::LEDManager(uint8_t pin, uint16_t numLeds)
 void LEDManager::begin() {
 	strip.begin();
 
-	randomSeed(analogRead(A0));  // or any unused analog pin | Critical to keep from freezing/locking up | LED Patterns that need it: FireFlicker
+	randomSeed(analogRead(A3));  // or any unused analog pin | Critical to keep from freezing/locking up | LED Patterns that need it: FireFlicker
 
 	// Read from EEPROM
 	uint8_t storedPattern = EEPROM.read(EEPROM_PATTERN_ADDR);
@@ -1215,3 +1236,5 @@ void LEDManager::eyesInTheDark() {
 }
 
 #endif // End ARDUINO NANO R4
+
+#endif // LED_MANAGER_ENABLED

@@ -18,6 +18,11 @@
 #include "../../include/control/control.h"
 #include "../../include/connectivity/rootpage.h"
 #include "../../include/sensors/print_status_sensor.h"
+#if LED_MANAGER_ENABLED
+#include "../../include/lights/LEDManager.h"
+// reference global instance defined in main sketch
+extern LEDManager ledManager;
+#endif
 
 class SemiSmartWebServer {
 public:
@@ -36,8 +41,13 @@ public:
   void handleSetIdleStart();
   void handleSetScreenSaver();
   void handleSetPowerLossMemory();
+  #if LED_MANAGER_ENABLED
+  void handleSetLedPattern();
+  void handleSetLedBrightness();
+  #endif
   void handleUpdate();           // final POST completion handler
   void handleUpdateUpload();     // upload processing handler
+// Added LED control handlers (when LED_MANAGER_ENABLED)
 };
 
 // Small no-op Print implementation to avoid using Serial while preserving Update.printError API.
@@ -54,7 +64,6 @@ extern "C" void turnSystemOn();
 
 
 extern SemiSmartWebServer sswServer;
-;
 
 #endif  // SM_WEBSERVER_H
 
