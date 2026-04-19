@@ -111,7 +111,8 @@ bool manualTurnoffHandled = true;
 
 void setup() {
 	Wire.begin();
-# if BREADBOARD
+
+#if BREADBOARD
 	Serial.begin(115200);
 #endif
 
