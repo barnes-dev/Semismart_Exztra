@@ -103,7 +103,7 @@ void ControlSystem::updateFanState() {
 			if ((sensorManager.getTemperature() < TEMP_MAX)
 				&& (sensorManager.getTemperature() < stateManager.getTargetTemp())
 				&& !HeatCoolOffFlag) {
-				setHeaterPower(255);
+				setHeaterPower(updateHeaterControl());
 			}
 			else if ((sensorManager.getTemperature() > stateManager.getTargetTemp())
 				&& !HeatCoolOffFlag) {
@@ -122,7 +122,7 @@ void ControlSystem::updateFanState() {
 			if ((sensorManager.getTemperature() < TEMP_MAX)
 				&& (sensorManager.getHumidity() > stateManager.getTargetHumidity())
 				&& !HeatCoolOffFlag) {
-				setHeaterPower(255);
+				setHeaterPower(updateHeaterControl());
 			}
 			else if ((sensorManager.getHumidity() < stateManager.getTargetHumidity())
 				&& !HeatCoolOffFlag) {

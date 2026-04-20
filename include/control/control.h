@@ -5,6 +5,7 @@
 #include "../core/system_config.h"
 #include "../sensors/sensors.h"
 #include "../safety/thermal_security.h"
+#include "../../include/control/pid_manager.h"
 
 // Fan states
 enum FanState : uint8_t {

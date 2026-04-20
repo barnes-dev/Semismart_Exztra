@@ -9,6 +9,7 @@ GyverPID heaterPID(PID_KP, PID_KI, PID_KD);
 
 extern StateManager stateManager;
 extern SensorManager sensorManager;
+uint8_t power = 0;
 
 void setupPID() {
     heaterPID.setDirection(PID_DIRECTION);
@@ -42,3 +43,33 @@ void pidTask() {
     
     controlSystem.setHeaterPower(finalPower);
 } 
+
+uint8_t updateHeaterControl() {
+    float currentTemp = readThermistorTemperature() / 10.0f;
+
+    // HARD SAFETY CUTOFF
+    if (currentTemp >= HARD_CUTOFF_TEMP) {
+        return 0;
+    }
+
+    // FULL POWER ZONE (≤ 50°C)
+    if (currentTemp <= FULL_POWER_TEMP) {
+        power = 255;
+    }
+    // TAPER ZONE (50°C → 60°C)
+    else if (currentTemp < SECURITY_MAX_HEATER_TEMP) {
+        float t = (currentTemp - FULL_POWER_TEMP) /
+            (SECURITY_MAX_HEATER_TEMP - FULL_POWER_TEMP);
+        // t goes from 0.0 → 1.0
+
+        float p = 255.0f - t * (255.0f - MIN_HEATER_POWER);
+        power = (uint8_t)p;
+		if (power < MIN_HEATER_POWER) power = MIN_HEATER_POWER; // Ensure we never go below the minimum power in the taper zone
+    }
+    // HOLD ZONE (exactly 60°C)
+    else {
+        power = MIN_HEATER_POWER;
+    }
+
+    return (uint8_t)power;
+}
