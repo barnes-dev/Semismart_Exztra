@@ -128,7 +128,7 @@ void SemiSmartWebServer::handleSensors() {
 
 	float t = sensorManager.getTemperature();
 	float h = sensorManager.getHumidity();
-
+	float heaterTemperature = readThermistorTemperature() / 10.0f;
 	// currentState must be a SystemState variable
 	// Example: SystemState currentState;
 	uint8_t state = static_cast<uint8_t>(stateManager.getSystemState());
@@ -191,7 +191,8 @@ void SemiSmartWebServer::handleSensors() {
 		"\"tempMax\":%u,"
 		"\"targetHumidity\":%u,"
 		"\"humMin\":%u,"
-		"\"humMax\":%u"
+		"\"humMax\":%u,"
+		"\"heaterTemp\":%.2f"
 #if LED_MANAGER_ENABLED
 		",\"ledPatternIndex\":%u,"
 		"\"ledPatternName\":\"%s\","
@@ -203,7 +204,7 @@ void SemiSmartWebServer::handleSensors() {
 		dryTimerDuration, idleStartTimer, screenSaverStartTime, powerOutageMemoryMode,
 		ETAhours, ETAminutes, ETAseconds,
 		targetTemp, TEMP_MIN, TEMP_MAX,
-		th, HUM_MIN, HUM_MAX
+		th, HUM_MIN, HUM_MAX, heaterTemperature
 #if LED_MANAGER_ENABLED
 		, ledManager.getPatternIndex(),
 		ledManager.getCurrentPatternName(),
@@ -300,6 +301,7 @@ void SemiSmartWebServer::handleTargetTemp() {
 	if (v > TEMP_MAX) v = TEMP_MAX;
 
 	stateManager.setTargetTemp((uint8_t)v);
+	saveTargetTempEEPROM(stateManager.getTargetTemp());
 
 	msserver.send(200, "text/plain", "OK");
 	digitalWrite(led, 0);
@@ -321,6 +323,7 @@ void SemiSmartWebServer::handleTargetHumidity() {
 	if (v > HUM_MAX) v = HUM_MAX;
 
 	stateManager.setTargetHumidity((uint8_t)v);
+	saveTargetHumEEPROM(stateManager.getTargetHumidity());
 
 	msserver.send(200, "text/plain", "OK");
 	digitalWrite(led, 0);

@@ -376,6 +376,7 @@ input[type='range']::-moz-range-thumb {
         <div class="sensor-item"><span class="label">Humidity:</span><span class="reading"><span id="humValue" class="value">--</span>%</span></div>
         <div class="sensor-item"><span class="label">Fan Speed:</span><span class="reading"><span id="fanSpeedValue" class="value">--</span></span></div>
         <div class="sensor-item"><span class="label">Heater power:</span><span class="reading"><span id="heatPowerValue" class="value">--</span></span></div>
+        <div class="sensor-item"><span class="label">Heater Temp:</span><span class="reading"><span id="heaterTempValue" class="value">--</span>°C</span></div>
         <div class="divider"></div>
     </div>
 
@@ -573,6 +574,7 @@ input[type='range']::-moz-range-thumb {
     var status           = document.getElementById('powerStatus');
     var tempEl           = document.getElementById('tempValue');
     var humEl            = document.getElementById('humValue');
+    var heaterTempEl     = document.getElementById("heaterTempValue");
     var fanSpeedEl       = document.getElementById('fanSpeedValue');
     var heatPowerEl      = document.getElementById('heatPowerValue');
     var oprModeEl        = document.getElementById('operatingMode');
@@ -974,6 +976,10 @@ input[type='range']::-moz-range-thumb {
                 if (o.heatPower !== undefined) {
                     const hp = parseInt(o.heatPower,10);
                     heatPowerEl.textContent = (hp>0)? hp+'%' : 'Heater is Off';
+                }
+
+                if (o.heaterTemp !== undefined) {
+                    heaterTempEl.textContent = parseFloat(o.heaterTemp).toFixed(1);
                 }
 
                 if (o.fanSpeed !== undefined) {
