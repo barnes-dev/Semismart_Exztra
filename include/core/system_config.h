@@ -94,8 +94,8 @@
 #endif
 
 // ===================== Thermal security system configuration =====================
-#define SECURITY_MAX_HEATER_TEMP 61.0        // Maximum heater temperature (°C)
-#define SECURITY_PROTECTION_THRESHOLD 61.0   // Protection activation threshold (°C)
+#define SECURITY_MAX_HEATER_TEMP 60.0        // Maximum heater temperature (°C)
+#define SECURITY_PROTECTION_THRESHOLD 60.0   // Protection activation threshold (°C)
 #define SECURITY_RECOVERY_THRESHOLD 58.0     // Recovery threshold (°C)
 
 #define SECURITY_PROTECTION_TIME 5000        // Minimum protection time (5 sec)
