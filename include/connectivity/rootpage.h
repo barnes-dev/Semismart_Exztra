@@ -430,7 +430,7 @@ input[type='range']::-moz-range-thumb {
             <span id="modeToggleLabel" class="value switch-label">Drymode from Humidity</span>
         </div>
 
-        <div class="sensor-item target-row">
+        <div class="sensor-item target-row" id="useModeBlock">
             <span class="label">Cycling use mode:</span>
             <label class="toggle-switch">
                 <input type="checkbox" id="useModeToggle">
@@ -596,6 +596,7 @@ input[type='range']::-moz-range-thumb {
     var screenSaverSlider = document.getElementById("screenSaverSlider");
     var screenSaverValue  = document.getElementById("screenSaverValue");
 
+    var useModeBlock     = document.getElementById("useModeBlock");
     var modeToggle       = document.getElementById("modeToggle");
     var modeToggleLabel  = document.getElementById("modeToggleLabel");
     var modeJustChanged  = false;
@@ -1010,6 +1011,19 @@ input[type='range']::-moz-range-thumb {
                         status.textContent="PRINTING";
                     else
                         updateUI();
+                }
+
+                if (o.gpioInterfaceEnabled !== undefined) {
+                    const gpioEnabled = parseInt(o.gpioInterfaceEnabled, 10);
+
+                    if (useModeBlock) {
+                        useModeBlock.style.display = (gpioEnabled === 1) ? "flex" : "none";
+                    }
+
+                    if (gpioEnabled === 0) {
+                        useModeToggle.checked = false;
+                        useModeLabel.textContent = "User";
+                    }
                 }
 
                 if (o.ctrlMode !== undefined) {

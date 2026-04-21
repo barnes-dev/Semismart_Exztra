@@ -158,6 +158,7 @@ void SemiSmartWebServer::handleSensors() {
 	uint16_t idleStartTimer = stateManager.getDryStartTimer();
 	uint8_t screenSaverStartTime = stateManager.getScreenTimeout();
 	bool powerOutageMemoryMode = stateManager.isPowerLossMemory();
+	bool gpioInterfaceEnabled = GPIO_INTERFACE_ENABLED ? 1 : 0;
 
 
 	// JSON now includes: temp, hum, state, fanSpeed, heatPower
@@ -183,6 +184,7 @@ void SemiSmartWebServer::handleSensors() {
 		"\"idleStartTimer\":%u,"
 		"\"screenSaverStartTime\":%u,"
 		"\"powerOutageMemoryMode\":%u,"
+		"\"gpioInterfaceEnabled\":%u,"
 		"\"ETAhours\":%u,"
 		"\"ETAminutes\":%u,"
 		"\"ETAseconds\":%u,"
@@ -201,7 +203,7 @@ void SemiSmartWebServer::handleSensors() {
 		"}",
 		t, h, state, fanSpeed, heatPower, oprMode, ctrlMode,
 		autoPrintMode, startHours, startMinutes, startSeconds, manualTurnOff,
-		dryTimerDuration, idleStartTimer, screenSaverStartTime, powerOutageMemoryMode,
+		dryTimerDuration, idleStartTimer, screenSaverStartTime, powerOutageMemoryMode, gpioInterfaceEnabled,
 		ETAhours, ETAminutes, ETAseconds,
 		targetTemp, TEMP_MIN, TEMP_MAX,
 		th, HUM_MIN, HUM_MAX, heaterTemperature
