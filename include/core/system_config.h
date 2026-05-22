@@ -92,10 +92,12 @@
 #define ADC_MAX 1023.0  // 10-bit ADC
 #define VCC 5.0        // Supply voltage for thermistor (5V for Nano)
 #endif
-#define KP 12.0f   // proportional gain (tune between 5–12)
-#define FULL_POWER_TEMP          (SECURITY_MAX_HEATER_TEMP - 4.5f)  // 55.0°C
-#define MIN_HEATER_POWER         153   // minimum sustaining power (≈ 15%)
-#define HARD_CUTOFF_TEMP         (SECURITY_MAX_HEATER_TEMP + 1.0f)   // 61°C
+//#define KPH 2.8f   // proportional gain (tune between 5–12)
+//#define KIH 0.25f
+//#define KDH 1.5f
+#define FULL_POWER_TEMP          (SECURITY_MAX_HEATER_TEMP - 4.0f)  // 55.0°C
+#define MIN_HEATER_POWER         183   // minimum sustaining power (≈ 15%)
+#define HARD_CUTOFF_TEMP         (SECURITY_MAX_HEATER_TEMP + 0.5f)   // 61°C
 
 
 // ===================== Thermal security system configuration =====================
