@@ -1,12 +1,4 @@
 {
-  "ExpandedNodes": [
-    "",
-    "\\include",
-    "\\include\\connectivity",
-    "\\src",
-    "\\src\\connectivity",
-    "\\src\\lights"
-  ],
-  "SelectedNode": "\\semismart_exztra.ino",
+  "ExpandedNodes": [],
   "PreviewInSolutionExplorer": false
 }

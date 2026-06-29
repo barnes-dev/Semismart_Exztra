@@ -1,26 +1,13 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\",
+  "WorkspaceRootPath": "C:\\Users\\barne\\OneDrive\\Documents\\GitHub\\Semismart_Exztra\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\user_config.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:user_config.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\barne\\AppData\\Local\\Temp\\83679132-b265-42b9-9925-d2b878606e30_modified_3dmonkey_semismart_ssd1306_orig_screen_cob_leds-v15.zip.e30\\Modified_3dmonkey_semismart_SSD1306_orig_screen_COB_LEDs-v1.5\\3dmonkey_semismart\\include\\core\\system_config.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\semismart_exztra.ino||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\barne\\OneDrive\\Documents\\GitHub\\Semismart_Exztra\\semismart_exztra.ino||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:semismart_exztra.ino||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\include\\connectivity\\rootpage.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\connectivity\\rootpage.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\include\\connectivity\\bluetooth_conn.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\connectivity\\bluetooth_conn.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\src\\connectivity\\bluetooth_conn.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\connectivity\\bluetooth_conn.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -59,66 +46,27 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "user_config.h",
-              "DocumentMoniker": "C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\user_config.h",
-              "RelativeDocumentMoniker": "user_config.h",
-              "ToolTip": "C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\user_config.h",
-              "RelativeToolTip": "user_config.h",
-              "ViewState": "AgIAADwAAAAAAAAAAAAAACsAAAAVAAAAAAAAAA==",
+              "Title": "system_config.h",
+              "DocumentMoniker": "C:\\Users\\barne\\AppData\\Local\\Temp\\83679132-b265-42b9-9925-d2b878606e30_modified_3dmonkey_semismart_ssd1306_orig_screen_cob_leds-v15.zip.e30\\Modified_3dmonkey_semismart_SSD1306_orig_screen_COB_LEDs-v1.5\\3dmonkey_semismart\\include\\core\\system_config.h",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\AppData\\Local\\Temp\\83679132-b265-42b9-9925-d2b878606e30_modified_3dmonkey_semismart_ssd1306_orig_screen_cob_leds-v15.zip.e30\\Modified_3dmonkey_semismart_SSD1306_orig_screen_COB_LEDs-v1.5\\3dmonkey_semismart\\include\\core\\system_config.h",
+              "ToolTip": "C:\\Users\\barne\\AppData\\Local\\Temp\\83679132-b265-42b9-9925-d2b878606e30_modified_3dmonkey_semismart_ssd1306_orig_screen_cob_leds-v15.zip.e30\\Modified_3dmonkey_semismart_SSD1306_orig_screen_COB_LEDs-v1.5\\3dmonkey_semismart\\include\\core\\system_config.h [Read Only]",
+              "RelativeToolTip": "..\\..\\..\\..\\AppData\\Local\\Temp\\83679132-b265-42b9-9925-d2b878606e30_modified_3dmonkey_semismart_ssd1306_orig_screen_cob_leds-v15.zip.e30\\Modified_3dmonkey_semismart_SSD1306_orig_screen_COB_LEDs-v1.5\\3dmonkey_semismart\\include\\core\\system_config.h [Read Only]",
+              "ViewState": "AgIAADwAAAAAAAAAAAAAAFkAAABHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-04-14T19:44:52.194Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-05T15:20:47.355Z",
+              "EditorCaption": " [Read Only]"
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
               "Title": "semismart_exztra.ino",
-              "DocumentMoniker": "C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\semismart_exztra.ino",
+              "DocumentMoniker": "C:\\Users\\barne\\OneDrive\\Documents\\GitHub\\Semismart_Exztra\\semismart_exztra.ino",
               "RelativeDocumentMoniker": "semismart_exztra.ino",
-              "ToolTip": "C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\semismart_exztra.ino",
-              "RelativeToolTip": "semismart_exztra.ino",
-              "ViewState": "AgIAAF0AAAAAAAAAAAAAAHQAAAAAAAAAAAAAAA==",
+              "ToolTip": "C:\\Users\\barne\\OneDrive\\Documents\\GitHub\\Semismart_Exztra\\semismart_exztra.ino*",
+              "RelativeToolTip": "semismart_exztra.ino*",
+              "ViewState": "AgIAAKYAAAAAAAAAAAAAAL4AAAA9AAAAAAAAAA==",
               "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKcSURBVDhPlZM9aJ1lGIav532/JCc1vybHQygkLbE1UaiDhSKoiIsgWCkOFkTt4qq4iJ0Et3ZwLnTooLgqODgJDoI0bY0JBNtFRQ8k7cnJOeZ8Od/3/j4OdZDQFrzgWh7u\u002B94eiTnz\u002BeYWy1OT0/eq6tmgeY5HUIjpzTcamzc7u3uXz5xWufjTGs3xxurdqro0jOlFRRuHS/9FwI3b4voT441P/izLdbmyuTW10e1\u002B0ff\u002BbFY9nH8gIsL06Oj3qzMz5\u002BWDH3586fdy8E2d0qwgh7MPQRk1tlyamDhvOlU1163deN979pxjt67v62p63tHzjl33762u2XOOnvd0nRvrVNW86TvHfoj0faSwlteWFrmwcpLnmk2GMVHGxKm5Od5bOcnrx5ZoFAV9H9kPgb7zmDIEhikyZg0frj7Fk6J0drZ5o9Xkwoll3l4\u002BzlsLLfp3d1gk89HTK0wU9v54CBiXEiFnTs3OkIYHXLl9hxvlAZd\u002B/oVnHjvC81MTXL5xk7\u002BN5cvf/qB/UHJ6dpqQEz4ljMsZVYUYKVNCbEHDe4IIA\u002B8ZOI8fHaPwDlKiDJHsHKqKyxkTUkJU2ex2Ue959egC05OTvHt8iTvtNrfabd45tkgvJV5YaHHEO27d62CAkBN29uy51aT5zSqm4tfuLo\u002BnSAtY397mu06XjXJIPRiwOFKwPxjw9V9tOmIwItmofivLV6\u002BdC6pfAQ1VJaeIpIxaiyksIOSUkBRRBBkpMGIAwojI\u002B0ZD6EkINSEgMWIVjDFYVSREJARszhgxWBFMTBACEoLPIfSMhrCB99dxjv/pOiGs2cmXX6nJeUtjPKExtjRG0RiTxpgfoGqMjpTWUP04eX9bjn76GRQFqDZRzoDOAw/7KgHZQ1hDzA4p8g/ekLaPdv13DwAAAABJRU5ErkJggg==",
-              "WhenOpened": "2026-04-14T19:42:13.304Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "bluetooth_conn.h",
-              "DocumentMoniker": "C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\include\\connectivity\\bluetooth_conn.h",
-              "RelativeDocumentMoniker": "include\\connectivity\\bluetooth_conn.h",
-              "ToolTip": "C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\include\\connectivity\\bluetooth_conn.h",
-              "RelativeToolTip": "include\\connectivity\\bluetooth_conn.h",
-              "ViewState": "AgIAACAAAAAAAAAAAAAcwDoAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-04-14T18:24:19.929Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "bluetooth_conn.cpp",
-              "DocumentMoniker": "C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\src\\connectivity\\bluetooth_conn.cpp",
-              "RelativeDocumentMoniker": "src\\connectivity\\bluetooth_conn.cpp",
-              "ToolTip": "C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\src\\connectivity\\bluetooth_conn.cpp",
-              "RelativeToolTip": "src\\connectivity\\bluetooth_conn.cpp",
-              "ViewState": "AgIAAI0AAAAAAAAAAAAmwLYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2026-04-14T18:23:24.188Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "rootpage.h",
-              "DocumentMoniker": "C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\include\\connectivity\\rootpage.h",
-              "RelativeDocumentMoniker": "include\\connectivity\\rootpage.h",
-              "ToolTip": "C:\\Users\\Nikolas\\OneDrive\\Documents\\Visual Studio 18\\Repos\\semismart_exztra\\include\\connectivity\\rootpage.h",
-              "RelativeToolTip": "include\\connectivity\\rootpage.h",
-              "ViewState": "AgIAABsDAAAAAAAAAAD4vyIDAAAeAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2026-04-14T16:16:54.622Z",
+              "WhenOpened": "2026-05-03T14:32:04.448Z",
               "EditorCaption": ""
             }
           ]
